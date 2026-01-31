@@ -1,0 +1,143 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thời tiết theo tuyến – Route analysis</title>
+    <link rel="stylesheet" href="{% static 'analysis/css/route.css' %}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+</head>
+<body>
+
+<header class="page-header">
+    <a href="/" class="back-link">← Trang chủ</a>
+    <h1>Thời tiết theo tuyến</h1>
+    <p class="subtitle">Chọn điểm A và B – vẽ đường thẳng, danh sách điểm trên tuyến</p>
+</header>
+
+<div class="container">
+    <form method="post" class="route-form" id="routeForm">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>Nhập tên địa điểm (hoặc chọn bên dưới):</label>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="start_place">Điểm A</label>
+                    <input type="text" name="start_place" id="start_place" placeholder="VD: Hà Nội, London">
+                </div>
+                <div class="form-group">
+                    <label for="end_place">Điểm B</label>
+                    <input type="text" name="end_place" id="end_place" placeholder="VD: TP.HCM, Paris">
+                </div>
+            </div>
+        </div>
+        <div class="form-group or-divider">hoặc chọn nhanh:</div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="start">Điểm A (gợi ý)</label>
+                <select name="start" id="start">
+                    <option value="">-- Chọn --</option>
+                    {% for loc in locations_list %}
+                    <option value="{{ loc.id }}">{{ loc.name }}</option>
+                    {% empty %}
+                    <option value="hanoi">Hà Nội</option>
+                    <option value="danang">Đà Nẵng</option>
+                    <option value="hcm">TP.HCM</option>
+                    <option value="hue">Huế</option>
+                    <option value="nhatrang">Nha Trang</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="end">Điểm B (gợi ý)</label>
+                <select name="end" id="end">
+                    <option value="">-- Chọn --</option>
+                    {% for loc in locations_list %}
+                    <option value="{{ loc.id }}">{{ loc.name }}</option>
+                    {% empty %}
+                    <option value="hcm">TP.HCM</option>
+                    <option value="danang">Đà Nẵng</option>
+                    <option value="hanoi">Hà Nội</option>
+                    <option value="hue">Huế</option>
+                    <option value="nhatrang">Nha Trang</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="n_points">Số điểm trên tuyến (3–20)</label>
+                <input type="number" name="n_points" id="n_points" value="5" min="3" max="20" step="1">
+            </div>
+        </div>
+        {% if not openweather_configured %}
+        <p class="api-warn">Chưa cấu hình OPENWEATHER_API_KEY – đang dùng dữ liệu mẫu. Thêm key vào .env để lấy thời tiết thật.</p>
+        {% endif %}
+        <button type="submit" class="btn btn-primary">Phân tích tuyến</button>
+    </form>
+
+    {% if route_points %}
+    <section class="map-section">
+        <h2>Bản đồ tuyến</h2>
+        <div id="route-map" class="route-map"></div>
+    </section>
+
+    <section class="points-section">
+        <h2>Các điểm trên tuyến</h2>
+        <div class="table-wrap">
+            <table class="route-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Điểm</th>
+                        <th>Nhiệt độ (°C)</th>
+                        <th>Độ ẩm (%)</th>
+                        <th>Thời tiết</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in route_weather %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td class="name">{{ p.name }}</td>
+                        <td class="temp">{{ p.temp }}</td>
+                        <td class="humidity">{{ p.humidity }}</td>
+                        <td class="desc">{{ p.description }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% else %}
+    <p class="no-data">Chọn điểm A, điểm B và bấm "Phân tích tuyến" để xem bản đồ và bảng.</p>
+    {% endif %}
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+(function() {
+    const routePoints = {{ route_points_json|safe }};
+    if (routePoints.length < 2) return;
+
+    const map = L.map('route-map').setView(
+        [routePoints[0].lat, routePoints[0].lon],
+        6
+    );
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(map);
+
+    const latlngs = routePoints.map(function(p) { return [p.lat, p.lon]; });
+    L.polyline(latlngs, { color: '#2563eb', weight: 4, opacity: 0.8 }).addTo(map);
+
+    routePoints.forEach(function(p, i) {
+        const label = i === 0 ? 'A' : i === routePoints.length - 1 ? 'B' : (i + 1);
+        L.marker([p.lat, p.lon])
+            .addTo(map)
+            .bindPopup('Điểm ' + label + ': ' + p.lat.toFixed(4) + ', ' + p.lon.toFixed(4));
+    });
+
+    map.fitBounds(latlngs, { padding: [30, 30] });
+})();
+</script>
+
+</body>
+</html>

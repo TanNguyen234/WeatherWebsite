@@ -1,0 +1,120 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>So sánh thời tiết – Multi-point analysis</title>
+    <link rel="stylesheet" href="{% static 'analysis/css/compare.css' %}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+</head>
+<body>
+
+<header class="page-header">
+    <a href="/" class="back-link">← Trang chủ</a>
+    <h1>So sánh thời tiết các địa điểm</h1>
+    <p class="subtitle">Chọn 2–3 điểm để so sánh (Multi-point analysis)</p>
+</header>
+
+<div class="container">
+    <form method="post" class="compare-form" id="compareForm">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>Nhập tên địa điểm (2–3 điểm):</label>
+            <input type="text" name="place1" id="place1" placeholder="VD: Hà Nội, London, Tokyo" autocomplete="off">
+            <input type="text" name="place2" id="place2" placeholder="VD: Đà Nẵng" autocomplete="off">
+            <input type="text" name="place3" id="place3" placeholder="Tùy chọn – điểm thứ 3" autocomplete="off">
+            <span class="hint">Dữ liệu thời tiết từ OpenWeather API. Có thể nhập tên thành phố bằng tiếng Việt hoặc tiếng Anh.</span>
+        </div>
+        <div class="form-group or-divider">hoặc chọn nhanh:</div>
+        <div class="form-group">
+            <select name="locations" id="locations" multiple size="4">
+                {% for loc in locations_list %}
+                <option value="{{ loc.id }}">{{ loc.name }}</option>
+                {% empty %}
+                <option value="hanoi">Hà Nội</option>
+                <option value="danang">Đà Nẵng</option>
+                <option value="hcm">TP.HCM</option>
+                <option value="hue">Huế</option>
+                <option value="nhatrang">Nha Trang</option>
+                {% endfor %}
+            </select>
+            <span class="hint">Giữ Ctrl (Windows) hoặc Cmd (Mac) để chọn 2–3 địa điểm</span>
+        </div>
+        {% if not openweather_configured %}
+        <p class="api-warn">Chưa cấu hình OPENWEATHER_API_KEY – đang dùng dữ liệu mẫu. Thêm key vào file .env để lấy thời tiết thật.</p>
+        {% endif %}
+        <button type="submit" class="btn btn-primary">So sánh</button>
+    </form>
+
+    {% if weather_data %}
+    <section class="results">
+        <h2>Bảng so sánh</h2>
+        <div class="table-wrap">
+            <table class="compare-table">
+                <thead>
+                    <tr>
+                        <th>Địa điểm</th>
+                        <th>Nhiệt độ (°C)</th>
+                        <th>Độ ẩm (%)</th>
+                        <th>Thời tiết</th>
+                        <th>Bản đồ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for city in weather_data %}
+                    <tr>
+                        <td class="name">{{ city.name }}</td>
+                        <td class="temp">{{ city.temp }}</td>
+                        <td class="humidity">{{ city.humidity }}</td>
+                        <td class="desc">{{ city.description }}</td>
+                        <td><div class="mini-map" id="map-{{ forloop.counter0 }}" data-lat="{{ city.lat }}" data-lon="{{ city.lon }}" data-name="{{ city.name }}"></div></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% else %}
+    <p class="no-data">Chọn 2–3 địa điểm và bấm "So sánh" để xem bảng.</p>
+    {% endif %}
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+(function() {
+    const weatherData = {{ weather_data_json|safe }};
+    document.querySelectorAll('.mini-map').forEach(function(el, index) {
+        const lat = parseFloat(el.dataset.lat);
+        const lon = parseFloat(el.dataset.lon);
+        const name = el.dataset.name || 'Điểm';
+        if (isNaN(lat) || isNaN(lon)) return;
+        const map = L.map(el.id).setView([lat, lon], 10);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(map);
+        L.marker([lat, lon]).addTo(map).bindPopup(name);
+    });
+
+    document.getElementById('compareForm').addEventListener('submit', function(e) {
+        const p1 = (document.getElementById('place1').value || '').trim();
+        const p2 = (document.getElementById('place2').value || '').trim();
+        const p3 = (document.getElementById('place3').value || '').trim();
+        const sel = document.getElementById('locations');
+        const nSel = sel.selectedOptions.length;
+        const nText = [p1, p2, p3].filter(Boolean).length;
+        if (nText > 0) {
+            if (nText < 2) {
+                e.preventDefault();
+                alert('Vui lòng nhập ít nhất 2 địa điểm.');
+            }
+            return;
+        }
+        if (nSel < 2 || nSel > 3) {
+            e.preventDefault();
+            alert('Vui lòng nhập 2–3 địa điểm hoặc chọn 2–3 mục trong danh sách.');
+        }
+    });
+})();
+</script>
+
+</body>
+</html>
