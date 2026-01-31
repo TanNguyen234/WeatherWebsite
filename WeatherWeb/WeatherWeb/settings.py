@@ -24,7 +24,7 @@ if os.name == 'nt':
     
     # Nếu không tìm thấy biến VIRTUAL_ENV, ta dùng đường dẫn tuyệt đối bạn đã cung cấp
     if not VENV_BASE:
-        OSGEO_PATH = r'D:\WeatherWebsite\WeatherWeb\venv\Lib\site-packages\osgeo'
+        OSGEO_PATH = r'D:\Projects\WeatherApp\venv\Lib\site-packages\osgeo'
     else:
         OSGEO_PATH = os.path.join(VENV_BASE, 'Lib', 'site-packages', 'osgeo')
 
@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'analysis',
+    'weather'
 ]
 
 MIDDLEWARE = [
@@ -102,11 +103,11 @@ WSGI_APPLICATION = 'WeatherWeb.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'weather_app',
-        'USER': 'postgres',
-        'PASSWORD': '123456',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.getenv("DB_NAME"),
+        'USER': os.getenv("DB_USER"),
+        'PASSWORD': os.getenv("DB_PASSWORD"),
+        'HOST': os.getenv("DB_HOST"),
+        'PORT': os.getenv("DB_PORT")
     }
 }
 

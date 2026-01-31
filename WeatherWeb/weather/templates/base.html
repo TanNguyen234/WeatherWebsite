@@ -1,0 +1,29 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}WeatherGIS Platform{% endblock %}</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="{% static 'weather/static/css/style.css' %}">
+</head>
+<body>
+    <header class="page-header">
+        <div class="brand-container">
+            <h1>WeatherGIS</h1>
+            <p class="subtitle">Spatial Weather Intelligence System</p>
+        </div>
+        <nav class="auth-links">
+            <a href="/login" class="btn-link">Login</a>
+            <a href="/register" class="btn btn-primary">Register</a>
+        </nav>
+    </header>
+
+    <main id="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

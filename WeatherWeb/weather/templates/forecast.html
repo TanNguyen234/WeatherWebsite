@@ -1,0 +1,309 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forecast – WeatherGIS</title>
+    
+    <style>
+        :root {
+            --bg: #f0f4f8;
+            --card: #fff;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* --- NAVBAR --- */
+        .page-header {
+            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+            color: #fff;
+            padding: 0.8rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            z-index: 1000;
+        }
+
+        .brand-container h1 { margin: 0; font-size: 1.3rem; }
+        
+        .nav-menu { display: flex; gap: 1.5rem; list-style: none; margin: 0; padding: 0; }
+        .nav-menu a { 
+            color: rgba(255,255,255,0.8); 
+            text-decoration: none; 
+            font-size: 0.9rem; 
+            font-weight: 500;
+        }
+        .nav-menu a.active { color: #fff; font-weight: 600; border-bottom: 2px solid #fff; }
+
+        /* --- CONTENT --- */
+        .header-section {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            background: #fff;
+            border-bottom: 1px solid var(--border);
+        }
+        .header-section h2 { margin: 0; font-size: 1.8rem; color: var(--text); }
+        .header-section p { margin: 0.5rem 0 0; color: var(--text-muted); }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+            width: 100%;
+        }
+
+        .forecast-form {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.2rem;
+            align-items: end;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: #fff;
+            transition: all 0.2s;
+        }
+
+        .form-group select:focus, .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn-submit {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 0.7rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-submit:hover { background: var(--primary-hover); }
+
+        /* --- TABLE --- */
+        .table-wrap {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .forecast-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .forecast-table th {
+            background: #f8fafc;
+            color: var(--text);
+            padding: 1rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .forecast-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.95rem;
+        }
+
+        .forecast-table tbody tr:hover { background: #f1f5f9; }
+
+        .temp-val { font-weight: 700; color: #e11d48; } /* Rose color for temp */
+        .rain-val { color: #2563eb; font-weight: 500; }
+        .wind-val { color: #059669; }
+        .desc-tag {
+            background: var(--bg);
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            background: var(--card);
+            border-radius: var(--radius);
+            color: var(--text-muted);
+            border: 2px dashed var(--border);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="page-header">
+        <div class="brand-container">
+            <h1>WeatherGIS</h1>
+        </div>
+        <nav>
+            <ul class="nav-menu">
+                <li><a href="/">Map</a></li>
+                <li><a href="/forecast" class="active">Forecast</a></li>
+                <li><a href="/compare">Compare</a></li>
+                <li><a href="/route">Route</a></li>
+                <li><a href="/layers">Layers</a></li>
+                <li><a href="/about">About</a></li>
+            </ul>
+        </nav>
+        <div class="auth-links">
+            <a href="#" class="btn-submit" style="background:white; color:var(--primary); padding: 0.4rem 1rem;">Account</a>
+        </div>
+    </header>
+
+    <div class="header-section">
+        <h2>Weather Forecast</h2>
+        <p>Analyze future weather conditions with spatial precision</p>
+    </div>
+
+    <div class="container">
+        <form id="forecast-form" class="forecast-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="location">Saved Location</label>
+                    <select id="location" name="location">
+                        <option value="">-- Choose saved point --</option>
+                        <option value="1">Hanoi (21.02, 105.85)</option>
+                        <option value="2">Ho Chi Minh (10.77, 106.70)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="lat">Latitude</label>
+                    <input type="number" step="0.0001" id="lat" name="lat" placeholder="21.0285">
+                </div>
+                <div class="form-group">
+                    <label for="lng">Longitude</label>
+                    <input type="number" step="0.0001" id="lng" name="lng" placeholder="105.8542">
+                </div>
+                <div class="form-group">
+                    <label for="range">Time Range</label>
+                    <select id="range" name="range">
+                        <option value="hour">Next 12 Hours</option>
+                        <option value="day">Next 5 Days</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-submit">Get Forecast</button>
+            </div>
+        </form>
+
+        <div id="forecast-table-wrap" class="table-wrap" style="display:none;">
+            <table id="forecast-table" class="forecast-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Temperature</th>
+                        <th>Rainfall</th>
+                        <th>Wind Speed</th>
+                        <th>Conditions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+
+        <div id="no-data" class="no-data">
+            <p>Please select a location or enter coordinates to view forecast data.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('forecast-form');
+            const tableWrap = document.getElementById('forecast-table-wrap');
+            const tableBody = document.querySelector('#forecast-table tbody');
+            const noData = document.getElementById('no-data');
+
+            // Mock Data
+            const MOCK_DATA = {
+                hour: [
+                    { time: 'Today 12:00', temp: 25.2, rain: '0mm', wind: '2.8m/s', desc: 'Clear sky' },
+                    { time: 'Today 15:00', temp: 27.0, rain: '0.2mm', wind: '3.0m/s', desc: 'Light rain' },
+                    { time: 'Today 18:00', temp: 24.8, rain: '0mm', wind: '2.5m/s', desc: 'Few clouds' },
+                    { time: 'Today 21:00', temp: 21.3, rain: '0mm', wind: '1.9m/s', desc: 'Clear sky' },
+                ],
+                day: [
+                    { time: 'Feb 01, 2026', temp: 25.0, rain: '0.5mm', wind: '2.5m/s', desc: 'Partly cloudy' },
+                    { time: 'Feb 02, 2026', temp: 26.2, rain: '0mm', wind: '2.7m/s', desc: 'Clear sky' },
+                    { time: 'Feb 03, 2026', temp: 24.8, rain: '1.2mm', wind: '3.1m/s', desc: 'Showers' },
+                    { time: 'Feb 04, 2026', temp: 23.5, rain: '0mm', wind: '2.0m/s', desc: 'Sunny' },
+                ]
+            };
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const range = document.getElementById('range').value;
+                const data = MOCK_DATA[range];
+                
+                renderTable(data);
+            });
+
+            function renderTable(data) {
+                tableBody.innerHTML = '';
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><b>${row.time}</b></td>
+                        <td><span class="temp-val">${row.temp}°C</span></td>
+                        <td class="rain-val">${row.rain}</td>
+                        <td class="wind-val">${row.wind}</td>
+                        <td><span class="desc-tag">${row.desc}</span></td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+                
+                noData.style.display = 'none';
+                tableWrap.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
