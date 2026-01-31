@@ -24,7 +24,7 @@ if os.name == 'nt':
     
     # Nếu không tìm thấy biến VIRTUAL_ENV, ta dùng đường dẫn tuyệt đối bạn đã cung cấp
     if not VENV_BASE:
-        OSGEO_PATH = r'D:\Projects\WeatherApp\venv\Lib\site-packages\osgeo'
+        OSGEO_PATH = r'D:\WeatherWebsite\WeatherWeb\venv\Lib\site-packages\osgeo'
     else:
         OSGEO_PATH = os.path.join(VENV_BASE, 'Lib', 'site-packages', 'osgeo')
 
@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'analysis',
 ]
 
 MIDDLEWARE = [
@@ -101,11 +102,11 @@ WSGI_APPLICATION = 'WeatherWeb.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': os.getenv("DB_NAME"),
-        'USER': os.getenv("DB_USER"),
-        'PASSWORD': os.getenv("DB_PASSWORD"),
-        'HOST': os.getenv("DB_HOST"),
-        'PORT': os.getenv("DB_PORT"),
+        'NAME': 'weather_app',
+        'USER': 'postgres',
+        'PASSWORD': '123456',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
@@ -145,3 +146,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# OpenWeather API (geocoding + current weather)
+# Lấy key miễn phí: https://openweathermap.org/api
+OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY", "")
