@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}So sánh – WeatherGIS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/compare.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-layout">
+    <div class="page-header-section">
+        <h2>So sánh vị trí</h2>
+        <p>So sánh không gian - So sánh điều kiện thời tiết giữa nhiều điểm địa lý</p>
+    </div>
+
+    <!-- Location Selection -->
+    <div class="card selection-card">
+        <div class="card-header">
+            <h3>Chọn vị trí để so sánh (2-4 vị trí)</h3>
+        </div>
+
+        <div class="location-selector">
+            <div class="selected-locations" id="selected-locations">
+                <!-- Selected locations will appear here -->
+            </div>
+
+            <div class="add-location-section">
+                <select id="location-select" class="form-control">
+                    <option value="">-- Thêm vị trí --</option>
+                    {% for loc in locations %}
+                    <option value="{{ loc.id }}" data-lat="{{ loc.latitude }}" data-lng="{{ loc.longitude }}" data-name="{{ loc.name|default:'Chưa đặt tên' }}">
+                        {{ loc.name|default:"Chưa đặt tên" }} ({{ loc.latitude|floatformat:2 }}, {{ loc.longitude|floatformat:2 }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="btn btn-secondary" id="add-location-btn">+ Thêm</button>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-primary" id="compare-btn" disabled>
+            So sánh thời tiết
+        </button>
+    </div>
+
+    <!-- Comparison Results -->
+    <div class="comparison-results" id="comparison-results" style="display: none;">
+        <!-- Mini Maps Row -->
+        <div class="mini-maps-row" id="mini-maps-row">
+            <!-- Dynamic mini maps -->
+        </div>
+
+        <!-- Comparison Table -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Bảng so sánh thời tiết</h3>
+            </div>
+            <div class="table-container">
+                <table class="data-table comparison-table" id="comparison-table">
+                    <thead>
+                        <tr id="table-header">
+                            <th>Chỉ số</th>
+                            <!-- Dynamic headers -->
+                        </tr>
+                    </thead>
+                    <tbody id="comparison-tbody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Visual Comparison -->
+        <div class="card">
+            <div class="card-header">
+                <h3>So sánh trực quan</h3>
+            </div>
+            <div class="chart-container">
+                <canvas id="comparison-chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="card" id="empty-state">
+        <div class="empty-state">
+            <div class="empty-state-icon"></div>
+            <p>Chọn 2-4 vị trí từ danh sách đã lưu để so sánh điều kiện thời tiết.<br>
+            Đây là so sánh không gian giữa nhiều điểm địa lý.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_data %}
+<script id="initial-data" type="application/json">
+{
+    "locations": {{ locations_json|safe }}
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/pages/compare.js' %}"></script>
+{% endblock %}

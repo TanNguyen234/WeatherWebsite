@@ -1,29 +1,64 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}WeatherGIS Platform{% endblock %}</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="{% static 'weather/static/css/style.css' %}">
+    <title>{% block title %}WeatherGIS{% endblock %}</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Base CSS -->
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    
+    <!-- Page-specific CSS -->
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
     <header class="page-header">
         <div class="brand-container">
-            <h1>WeatherGIS</h1>
-            <p class="subtitle">Spatial Weather Intelligence System</p>
+            <a href="{% url 'map' %}"><h1>WeatherGIS</h1></a>
         </div>
-        <nav class="auth-links">
-            <a href="/login" class="btn-link">Login</a>
-            <a href="/register" class="btn btn-primary">Register</a>
+        
+        <nav>
+            <ul class="nav-menu">
+                <li><a href="{% url 'map' %}" class="{% if request.resolver_match.url_name == 'map' %}active{% endif %}">Bản đồ</a></li>
+                <li><a href="{% url 'forecast' %}" class="{% if request.resolver_match.url_name == 'forecast' %}active{% endif %}">Dự báo</a></li>
+                <li><a href="{% url 'compare' %}" class="{% if request.resolver_match.url_name == 'compare' %}active{% endif %}">So sánh</a></li>
+                <li><a href="{% url 'route' %}" class="{% if request.resolver_match.url_name == 'route' %}active{% endif %}">Tuyến đường</a></li>
+                <li><a href="{% url 'layers' %}" class="{% if request.resolver_match.url_name == 'layers' %}active{% endif %}">Lớp bản đồ</a></li>
+                <li><a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}">Giới thiệu</a></li>
+            </ul>
         </nav>
+
+        <div class="auth-links">
+            {% if user.is_authenticated %}
+                <span class="user-greeting">{{ user.username }}</span>
+                <a href="{% url 'logout' %}" class="btn-logout">Đăng xuất</a>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn-login">Đăng nhập</a>
+                <a href="{% url 'register' %}" class="btn-signup">Đăng ký</a>
+            {% endif %}
+        </div>
     </header>
 
-    <main id="main-content">
+    <main class="main-content">
         {% block content %}{% endblock %}
     </main>
 
+    <!-- Data passed from Django -->
+    {% block page_data %}{% endblock %}
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Base JS modules -->
+    <script src="{% static 'js/modules/mapCore.js' %}"></script>
+    <script src="{% static 'js/modules/weatherApi.js' %}"></script>
+    <script src="{% static 'js/modules/uiHelpers.js' %}"></script>
+    
+    <!-- Page-specific JS -->
     {% block extra_js %}{% endblock %}
 </body>
 </html>

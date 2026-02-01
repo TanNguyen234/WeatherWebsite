@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Giới thiệu – WeatherGIS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/about.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-layout about-page">
+    <div class="page-header-section">
+        <h2>Giới thiệu WeatherGIS</h2>
+        <p>Tìm hiểu kiến trúc và nguyên tắc thiết kế của Nền tảng Thời tiết Web GIS</p>
+    </div>
+
+    <!-- MTV Architecture -->
+    <section class="about-section">
+        <div class="card">
+            <div class="card-header">
+                <h3>Kiến trúc MTV (Model–Template–View)</h3>
+            </div>
+            <div class="architecture-diagram">
+                <div class="arch-component model">
+                    <h4>Model</h4>
+                    <p>Đối tượng không gian & Ý định người dùng</p>
+                    <ul>
+                        <li>UserLocation</li>
+                        <li>LocationGroup</li>
+                        <li>Route</li>
+                    </ul>
+                </div>
+                <div class="arch-arrow">↔</div>
+                <div class="arch-component view">
+                    <h4>View</h4>
+                    <p>Xử lý Request/Response</p>
+                    <ul>
+                        <li>Xác thực đầu vào</li>
+                        <li>Gọi services</li>
+                        <li>Trả về JSON/HTML</li>
+                    </ul>
+                </div>
+                <div class="arch-arrow">↔</div>
+                <div class="arch-component template">
+                    <h4>Template</h4>
+                    <p>Lớp trình bày</p>
+                    <ul>
+                        <li>Cấu trúc HTML</li>
+                        <li>Chỉ hiển thị dữ liệu</li>
+                        <li>Không có logic nghiệp vụ</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Data Flow -->
+    <section class="about-section">
+        <div class="card">
+            <div class="card-header">
+                <h3>Luồng dữ liệu: Frontend ↔ Backend</h3>
+            </div>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Tương tác người dùng</h4>
+                        <p>Click vào bản đồ / Chọn vị trí</p>
+                        <code>map.on('click', handleClick)</code>
+                    </div>
+                </div>
+                <div class="flow-connector">→</div>
+                <div class="flow-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Gọi API</h4>
+                        <p>Gửi tọa độ đến backend</p>
+                        <code>POST /api/weather/</code>
+                    </div>
+                </div>
+                <div class="flow-connector">→</div>
+                <div class="flow-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Xử lý Service</h4>
+                        <p>Xác thực & lấy dữ liệu thời tiết</p>
+                        <code>get_current_weather(lat, lng)</code>
+                    </div>
+                </div>
+                <div class="flow-connector">→</div>
+                <div class="flow-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>Phản hồi</h4>
+                        <p>Trả về JSON cho frontend</p>
+                        <code>{"temperature": 29.5, ...}</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Spatial vs Temporal -->
+    <section class="about-section">
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Dữ liệu không gian</h3>
+                </div>
+                <div class="data-type-content">
+                    <p><strong>Định nghĩa:</strong> Dữ liệu liên quan đến vị trí địa lý</p>
+                    <ul>
+                        <li>Tọa độ (vĩ độ, kinh độ)</li>
+                        <li>Điểm, đường, đa giác</li>
+                        <li>Phân tích dựa trên vị trí</li>
+                    </ul>
+                    <div class="example-box">
+                        <strong>Ví dụ trong ứng dụng:</strong>
+                        <ul>
+                            <li>Vị trí người dùng đã lưu</li>
+                            <li>Tuyến đường giữa hai điểm</li>
+                            <li>Thời tiết tại tọa độ cụ thể</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Dữ liệu thời gian</h3>
+                </div>
+                <div class="data-type-content">
+                    <p><strong>Định nghĩa:</strong> Dữ liệu thay đổi theo thời gian</p>
+                    <ul>
+                        <li>Dữ liệu chuỗi thời gian</li>
+                        <li>Hồ sơ lịch sử</li>
+                        <li>Dự báo & dự đoán</li>
+                    </ul>
+                    <div class="example-box">
+                        <strong>Ví dụ trong ứng dụng:</strong>
+                        <ul>
+                            <li>Dự báo theo giờ (24 giờ tới)</li>
+                            <li>Dự báo theo ngày (7 ngày tới)</li>
+                            <li>Xu hướng thời tiết theo thời gian</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why No Weather Storage -->
+    <section class="about-section">
+        <div class="card highlight-card">
+            <div class="card-header">
+                <h3>Tại sao không lưu dữ liệu thời tiết vào Database</h3>
+            </div>
+            <div class="reasons-grid">
+                <div class="reason-item">
+                    <span class="reason-icon">Làm mới</span>
+                    <h4>Dữ liệu cần cập nhật</h4>
+                    <p>Dữ liệu thời tiết thay đổi nhanh chóng. Dữ liệu được lưu trữ trở nên lỗi thời trong vài phút.</p>
+                </div>
+                <div class="reason-item">
+                    <span class="reason-icon">Chính xác</span>
+                    <h4>Độ chính xác API</h4>
+                    <p>Các API bên ngoài (OpenWeatherMap) duy trì độ chính xác và cập nhật dữ liệu.</p>
+                </div>
+                <div class="reason-item">
+                    <span class="reason-icon">Hiệu quả</span>
+                    <h4>Hiệu quả lưu trữ</h4>
+                    <p>Không cần sao chép dữ liệu đã được quản lý bởi các dịch vụ thời tiết.</p>
+                </div>
+                <div class="reason-item">
+                    <span class="reason-icon">Kiến trúc</span>
+                    <h4>Rõ ràng kiến trúc</h4>
+                    <p>Database lưu trữ ý định người dùng (vị trí), không phải dữ liệu bên ngoài.</p>
+                </div>
+            </div>
+            <div class="principle-box">
+                <strong>Nguyên tắc cốt lõi:</strong> Lấy dữ liệu theo yêu cầu, không tích trữ dữ liệu.
+            </div>
+        </div>
+    </section>
+
+    <!-- Database Schema -->
+    <section class="about-section">
+        <div class="card">
+            <div class="card-header">
+                <h3>Database Schema (PostGIS-Ready)</h3>
+            </div>
+            <div class="schema-diagram">
+                <div class="table-box">
+                    <h4>user_location</h4>
+                    <ul>
+                        <li><code>id</code> SERIAL PK</li>
+                        <li><code>user_id</code> FK → auth_user</li>
+                        <li><code>name</code> VARCHAR(255)</li>
+                        <li><code>latitude</code> FLOAT</li>
+                        <li><code>longitude</code> FLOAT</li>
+                        <li><code>created_at</code> TIMESTAMP</li>
+                    </ul>
+                    <p class="future-note">Tương lai: lat/lng → POINT SRID 4326</p>
+                </div>
+                <div class="table-box">
+                    <h4>location_group</h4>
+                    <ul>
+                        <li><code>id</code> SERIAL PK</li>
+                        <li><code>user_id</code> FK → auth_user</li>
+                        <li><code>name</code> VARCHAR(255)</li>
+                        <li><code>created_at</code> TIMESTAMP</li>
+                    </ul>
+                </div>
+                <div class="table-box">
+                    <h4>route</h4>
+                    <ul>
+                        <li><code>id</code> SERIAL PK</li>
+                        <li><code>user_id</code> FK → auth_user</li>
+                        <li><code>name</code> VARCHAR(255)</li>
+                        <li><code>start_location_id</code> FK</li>
+                        <li><code>end_location_id</code> FK</li>
+                    </ul>
+                    <p class="future-note">Tương lai: → LINESTRING</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack -->
+    <section class="about-section">
+        <div class="card">
+            <div class="card-header">
+                <h3>Công nghệ sử dụng</h3>
+            </div>
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <span class="tech-icon">Django</span>
+                    <h4>Django 4.x</h4>
+                    <p>Backend Framework</p>
+                </div>
+                <div class="tech-item">
+                    <span class="tech-icon">PostgreSQL</span>
+                    <h4>PostgreSQL</h4>
+                    <p>Database (PostGIS ready)</p>
+                </div>
+                <div class="tech-item">
+                    <span class="tech-icon">Leaflet</span>
+                    <h4>Leaflet.js</h4>
+                    <p>Bản đồ tương tác</p>
+                </div>
+                <div class="tech-item">
+                    <span class="tech-icon">OWM</span>
+                    <h4>OpenWeatherMap</h4>
+                    <p>API thời tiết</p>
+                </div>
+                <div class="tech-item">
+                    <span class="tech-icon">Chart.js</span>
+                    <h4>Chart.js</h4>
+                    <p>Trực quan hóa dữ liệu</p>
+                </div>
+                <div class="tech-item">
+                    <span class="tech-icon">CSS</span>
+                    <h4>CSS Custom</h4>
+                    <p>Giao diện GIS chuyên nghiệp</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Không cần JS phức tạp cho trang Giới thiệu -->
+{% endblock %}

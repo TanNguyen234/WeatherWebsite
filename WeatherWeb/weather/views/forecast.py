@@ -1,35 +1,61 @@
+import json
 from django.views import View
 from django.shortcuts import render
 from django.http import JsonResponse
+from weather.services.gis_utils import list_user_locations, serialize_locations
+from weather.services.forecast_service import generate_mock_forecast
+
 
 class ForecastView(View):
-    template_name = "forecast.html"
+    """
+    Forecast view - Temporal analysis at fixed point
+    """
+    template_name = "weather/forecast.html"
 
     def get(self, request):
-        # Pseudo CK: provide mock locations for dropdown
-        locations = [
-            {"id": 1, "name": "Hanoi", "latitude": 21.0285, "longitude": 105.8542},
-            {"id": 2, "name": "Ho Chi Minh City", "latitude": 10.7769, "longitude": 106.7009},
-        ]
-        return render(request, self.template_name, {"locations": locations})
+        """
+        Load forecast page with user's saved locations
+        """
+        locations = []
+        
+        if request.user.is_authenticated:
+            locations = list_user_locations(request.user)
+
+        context = {
+            'locations': locations,
+            'locations_json': json.dumps(serialize_locations(locations))
+        }
+
+        return render(request, self.template_name, context)
 
     def post(self, request):
-        # Always return static mock data for forecast
-        # In real app, parse POST and call service
-        data = {
-            "hour": [
-                {"time": "2026-01-31 09:00", "temp": 22.5, "rain": 0, "wind": 2.1, "desc": "Clear sky"},
-                {"time": "2026-01-31 12:00", "temp": 25.2, "rain": 0, "wind": 2.8, "desc": "Few clouds"},
-                {"time": "2026-01-31 15:00", "temp": 27.0, "rain": 0.2, "wind": 3.0, "desc": "Light rain"},
-                {"time": "2026-01-31 18:00", "temp": 24.8, "rain": 0, "wind": 2.5, "desc": "Clear sky"},
-                {"time": "2026-01-31 21:00", "temp": 21.3, "rain": 0, "wind": 1.9, "desc": "Clear sky"},
-            ],
-            "day": [
-                {"time": "2026-01-31", "temp": 25.0, "rain": 0.5, "wind": 2.5, "desc": "Partly cloudy"},
-                {"time": "2026-02-01", "temp": 26.2, "rain": 0, "wind": 2.7, "desc": "Clear sky"},
-                {"time": "2026-02-02", "temp": 24.8, "rain": 1.2, "wind": 3.1, "desc": "Showers"},
-                {"time": "2026-02-03", "temp": 23.5, "rain": 0, "wind": 2.0, "desc": "Clear sky"},
-                {"time": "2026-02-04", "temp": 22.9, "rain": 0, "wind": 1.8, "desc": "Clear sky"},
-            ]
-        }
-        return JsonResponse(data)
+        """
+        Generate forecast data for a location
+        """
+        try:
+            data = json.loads(request.body.decode())
+            mode = data.get('mode', 'hourly')
+            
+            # Get coordinates
+            lat = data.get('latitude')
+            lng = data.get('longitude')
+            location_id = data.get('location_id')
+            
+            if location_id and request.user.is_authenticated:
+                from weather.models import UserLocation
+                location = UserLocation.objects.get(id=location_id, user=request.user)
+                lat = location.latitude
+                lng = location.longitude
+            
+            if lat is None or lng is None:
+                return JsonResponse({'error': 'Coordinates required'}, status=400)
+            
+            forecast = generate_mock_forecast(float(lat), float(lng), mode)
+            
+            return JsonResponse({
+                'forecast': forecast,
+                'location': {'latitude': lat, 'longitude': lng}
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)

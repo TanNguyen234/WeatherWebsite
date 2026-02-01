@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lớp bản đồ – WeatherGIS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/layers.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="gis-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>Lớp bản đồ GIS</h2>
+        </div>
+
+        <div class="sidebar-content">
+            <p class="sidebar-description">
+                Trừu tượng hóa lớp - Bật/tắt và điều chỉnh các lớp hiển thị thời tiết trên bản đồ.
+            </p>
+
+            <!-- Layer Controls -->
+            <div class="layer-controls">
+                <div class="layer-item">
+                    <div class="layer-header">
+                        <label class="layer-toggle">
+                            <input type="checkbox" id="layer-temperature" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="layer-name">Nhiệt độ</span>
+                    </div>
+                    <div class="layer-options">
+                        <label>Độ trong suốt</label>
+                        <input type="range" id="opacity-temperature" min="0" max="100" value="70" class="form-range">
+                        <span class="opacity-value">70%</span>
+                    </div>
+                    <div class="layer-legend temperature-legend">
+                        <span>Lạnh</span>
+                        <div class="legend-gradient"></div>
+                        <span>Nóng</span>
+                    </div>
+                </div>
+
+                <div class="layer-item">
+                    <div class="layer-header">
+                        <label class="layer-toggle">
+                            <input type="checkbox" id="layer-rain">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="layer-name">Lượng mưa</span>
+                    </div>
+                    <div class="layer-options" style="display: none;">
+                        <label>Độ trong suốt</label>
+                        <input type="range" id="opacity-rain" min="0" max="100" value="70" class="form-range">
+                        <span class="opacity-value">70%</span>
+                    </div>
+                    <div class="layer-legend rain-legend" style="display: none;">
+                        <span>0mm</span>
+                        <div class="legend-gradient"></div>
+                        <span>50mm+</span>
+                    </div>
+                </div>
+
+                <div class="layer-item">
+                    <div class="layer-header">
+                        <label class="layer-toggle">
+                            <input type="checkbox" id="layer-wind">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="layer-name">Tốc độ gió</span>
+                    </div>
+                    <div class="layer-options" style="display: none;">
+                        <label>Độ trong suốt</label>
+                        <input type="range" id="opacity-wind" min="0" max="100" value="70" class="form-range">
+                        <span class="opacity-value">70%</span>
+                    </div>
+                    <div class="layer-legend wind-legend" style="display: none;">
+                        <span>Yên tĩnh</span>
+                        <div class="legend-gradient"></div>
+                        <span>Mạnh</span>
+                    </div>
+                </div>
+
+                <div class="layer-item">
+                    <div class="layer-header">
+                        <label class="layer-toggle">
+                            <input type="checkbox" id="layer-clouds">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="layer-name">Độ che phủ mây</span>
+                    </div>
+                    <div class="layer-options" style="display: none;">
+                        <label>Độ trong suốt</label>
+                        <input type="range" id="opacity-clouds" min="0" max="100" value="70" class="form-range">
+                        <span class="opacity-value">70%</span>
+                    </div>
+                    <div class="layer-legend clouds-legend" style="display: none;">
+                        <span>Quang đãng</span>
+                        <div class="legend-gradient"></div>
+                        <span>U ám</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Layer Info -->
+            <div class="layer-info-section">
+                <h3>Giới thiệu về lớp bản đồ</h3>
+                <p>Các lớp thời tiết hiển thị mô hình dữ liệu không gian trên bản đồ. Trong môi trường thực tế, chúng sẽ kết nối với các dịch vụ tile thời tiết thời gian thực.</p>
+                <p class="text-muted">Hiện đang hiển thị lớp mô phỏng.</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Map Container -->
+    <div class="map-container">
+        <div id="map"></div>
+        
+        <!-- Legend Panel -->
+        <div class="legend-panel" id="legend-panel">
+            <h4>Chú giải</h4>
+            <div id="active-legends">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_data %}
+<script id="initial-data" type="application/json">
+{
+    "layers": {{ layers_json|safe }}
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/pages/layers.js' %}"></script>
+{% endblock %}

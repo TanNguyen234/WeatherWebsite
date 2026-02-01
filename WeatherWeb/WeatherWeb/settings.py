@@ -16,15 +16,13 @@ import os
 
 load_dotenv()
 
-load_dotenv()
-
 if os.name == 'nt':
     # Lấy đường dẫn gốc của venv
     VENV_BASE = os.environ.get('VIRTUAL_ENV')
     
     # Nếu không tìm thấy biến VIRTUAL_ENV, ta dùng đường dẫn tuyệt đối bạn đã cung cấp
     if not VENV_BASE:
-        OSGEO_PATH = r'D:\Projects\WeatherApp\venv\Lib\site-packages\osgeo'
+        OSGEO_PATH = os.environ.get('OSGEO_PATH', r'D:\Projects\WeatherApp\venv\Lib\site-packages\osgeo')
     else:
         OSGEO_PATH = os.path.join(VENV_BASE, 'Lib', 'site-packages', 'osgeo')
 

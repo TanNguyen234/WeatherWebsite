@@ -9,22 +9,22 @@
         MAP_INITIAL_VIEW: [21.0285, 105.8542], // Mặc định tại Hà Nội
         MAP_INITIAL_ZOOM: 6,
         API_ENDPOINTS: {
-            SAVE_LOCATION: '', // Tự động nhận URL hiện tại hoặc chỉ định cụ thể
             GET_WEATHER: '/weather/mock-weather/' // Use mock endpoint
         },
         SELECTORS: {
             MAP_ID: 'map',
-            LOCATION_LIST_ID: 'location-list'
+            LOCATION_LIST_ID: 'location-list',
+            INITIAL_DATA_ID: 'initial-locations-data'
         }
     };
 
-    const mapController = {
+    const App = {
         map: null,
         markers: new Map(), // Sử dụng Map object để quản lý marker hiệu quả hơn
 
         init: function() {
             this.initMap();
-            this.loadInitialData();
+            this.loadData();
             this.bindEvents();
         },
 
@@ -37,122 +37,157 @@
             }).addTo(this.map);
         },
 
-        loadInitialData: function() {
-            // Quy tắc 4.2: Sử dụng dữ liệu được truyền an toàn qua json_script
-            const initialData = window.initialLocations || [];
-            initialData.forEach(loc => this.addMarker(loc));
+        loadData: function() {
+            const dataEl = document.getElementById(CONFIG.SELECTORS.INITIAL_DATA_ID);
+            let locations = [];
+            
+            try {
+                const rawData = JSON.parse(dataEl.textContent);
+                locations = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+            } catch (e) {
+                // Fallback mock data if parsing fails
+                locations = [
+                    {id: 'fake1', name: 'Hanoi Capital', latitude: 21.0285, longitude: 105.8542},
+                    {id: 'fake2', name: 'Da Nang City', latitude: 16.0471, longitude: 108.2067}
+                ];
+            }
+
+            if (!locations || locations.length === 0) {
+                locations = [{id: 'temp1', name: 'Example Point', latitude: 21.0, longitude: 105.8}];
+            }
+
+            locations.forEach(loc => this.renderLocation(loc));
+        },
+
+        renderLocation: function(loc) {
+            // Add Marker to map
+            const marker = L.marker([loc.latitude, loc.longitude]).addTo(this.map);
+            marker.bindPopup(this.createMarkerPopup(loc));
+            this.markers.set(String(loc.id), marker);
+
+            // Add to Sidebar
+            this.addToSidebar(loc);
+        },
+
+        createMarkerPopup: function(loc) {
+            return `<b>${loc.name}</b><br><small>${loc.latitude.toFixed(3)}, ${loc.longitude.toFixed(3)}</small>`;
+        },
+
+        addToSidebar: function(loc) {
+            const list = document.getElementById(CONFIG.SELECTORS.LOCATION_LIST_ID);
+            if (!list) return;
+
+            const li = document.createElement('li');
+            li.dataset.id = loc.id;
+            li.innerHTML = `
+                <span class="loc-name">${loc.name}</span>
+                <span class="coords">${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)}</span>
+            `;
+            list.prepend(li);
         },
 
         bindEvents: function() {
-            // Quy tắc 3: Click bất kỳ đâu trên bản đồ đều phải hợp lệ
-            this.map.on('click', this.handleMapClick.bind(this));
-            
-            // Xử lý sự kiện Sidebar
+            // Sidebar click - pan to marker
             const listElement = document.getElementById(CONFIG.SELECTORS.LOCATION_LIST_ID);
             if (listElement) {
                 listElement.addEventListener('click', this.handleSidebarClick.bind(this));
             }
+
+            // Map click - show save popup
+            this.map.on('click', this.handleMapClick.bind(this));
         },
 
-        addMarker: function(loc) {
-            const marker = L.marker([loc.latitude, loc.longitude]).addTo(this.map);
+        handleSidebarClick: function(e) {
+            const li = e.target.closest('li');
+            if (!li) return;
             
-            // Quy tắc 3: Thời tiết được lấy on-demand, không lưu trong DB
-            marker.on('click', () => this.fetchAndShowWeather(loc, marker));
-            
-            this.markers.set(String(loc.id), marker);
-            return marker;
+            const marker = this.markers.get(li.dataset.id);
+            if (marker) {
+                this.map.flyTo(marker.getLatLng(), 12);
+                marker.openPopup();
+            }
         },
 
         handleMapClick: function(e) {
             const { lat, lng } = e.latlng;
-            // Show popup with mock weather data
-            const popupContent = this.mockWeatherPopup(lat, lng);
+            const self = this;
+            
+            const popupContent = document.createElement('div');
+            popupContent.innerHTML = `
+                <strong>New Location</strong><br>
+                <input type="text" id="new-loc-name" placeholder="Name this place..." style="width:100%; margin-top:5px; padding:4px;">
+                <button class="btn-save-here" id="btn-save-action">Save to Sidebar</button>
+            `;
+
             L.popup()
-                .setLatLng([lat, lng])
+                .setLatLng(e.latlng)
                 .setContent(popupContent)
                 .openOn(this.map);
-        },
 
-        mockWeatherPopup: function(lat, lng) {
-            // Pseudo CK mock data
-            return `
-                <strong>Weather at (${lat.toFixed(4)}, ${lng.toFixed(4)})</strong><br>
-                Temp: 25.2°C<br>
-                Rain: 0 mm<br>
-                Wind: 2.8 m/s<br>
-                Desc: Clear sky
-            `;
-        },
-
-        fetchAndShowWeather: async function(loc, marker) {
-            marker.bindPopup("Fetching weather data...").openPopup();
-
-            try {
-                const url = `${CONFIG.API_ENDPOINTS.GET_WEATHER}?lat=${loc.latitude}&lng=${loc.longitude}`;
-                const response = await fetch(url);
-                
-                if (!response.ok) throw new Error();
-                
-                const weatherData = await response.json();
-                marker.setPopupContent(this.createPopupHtml(loc, weatherData));
-                
-            } catch (err) {
-                marker.setPopupContent(`<b>${loc.name || 'Point'}</b><br>Weather service unavailable.`);
-            }
-        },
-
-        createPopupHtml: function(loc, weather) {
-            // Quy tắc 4.3: Professional UI, functional clarity
-            return `
-                <div class="gis-popup">
-                    <strong>${loc.name || 'Selected Location'}</strong><hr>
-                    <small>Lat: ${loc.latitude.toFixed(4)}, Lng: ${loc.longitude.toFixed(4)}</small>
-                    <div class="weather-info" style="margin-top: 8px;">
-                        <div>Temp: <b>${weather.temperature}°C</b></div>
-                        <div>Desc: ${weather.description}</div>
-                        <div>Wind: ${weather.wind_speed} m/s</div>
-                    </div>
-                </div>
-            `;
-        },
-
-        updateSidebar: function(loc) {
-            const ul = document.getElementById(CONFIG.SELECTORS.LOCATION_LIST_ID);
-            if (!ul) return;
-
-            const li = document.createElement('li');
-            li.dataset.id = loc.id;
-            li.className = 'location-item';
-            li.innerHTML = `
-                ${loc.name || '(Unnamed Point)'}<br>
-                <span class="coords">(${loc.latitude.toFixed(3)}, ${loc.longitude.toFixed(3)})</span>
-            `;
-            ul.prepend(li);
-        },
-
-        handleSidebarClick: function(e) {
-            const li = e.target.closest('li[data-id]');
-            if (li) {
-                const marker = this.markers.get(String(li.dataset.id));
-                if (marker) {
-                    this.map.panTo(marker.getLatLng());
-                    marker.fire('click');
+            // Bind save button event after popup is opened
+            setTimeout(function() {
+                const saveBtn = document.getElementById('btn-save-action');
+                if (saveBtn) {
+                    saveBtn.onclick = function() {
+                        const name = document.getElementById('new-loc-name').value || "Saved Point";
+                        self.saveLocationToServer(lat, lng, name);
+                    };
                 }
+            }, 10);
+        },
+
+        saveLocationToServer: async function(lat, lng, name) {
+            // Optimistic UI - render immediately
+            const tempId = Date.now();
+            const newLoc = { id: tempId, name: name, latitude: lat, longitude: lng };
+            this.renderLocation(newLoc);
+            this.map.closePopup();
+
+            // POST to server
+            try {
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCsrfToken()
+                    },
+                    body: JSON.stringify({
+                        latitude: lat,
+                        longitude: lng,
+                        name: name
+                    })
+                });
+
+                if (!response.ok) throw new Error("Failed to save");
+                console.log("Location saved successfully!");
+            } catch (err) {
+                console.error("Save error:", err);
+                // Location is already shown in UI, just log error
             }
         },
 
         getCsrfToken: function() {
-            return document.cookie.split('; ')
-                .find(row => row.startsWith('csrftoken='))
-                ?.split('=')[1] || '';
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, 'csrftoken'.length + 1) === ('csrftoken' + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring('csrftoken'.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
         }
     };
 
-    // Khởi tạo khi DOM sẵn sàng
-    document.addEventListener('DOMContentLoaded', () => mapController.init());
+    // Initialize app when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        App.init();
+    });
 
     // Xuất ra window để các module khác có thể tương tác nếu cần (Extensibility)
-    window.GISMap = mapController;
+    window.GISMap = App;
 
 })();

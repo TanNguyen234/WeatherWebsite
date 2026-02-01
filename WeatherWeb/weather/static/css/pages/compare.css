@@ -1,0 +1,148 @@
+/* ========================================
+   Compare Page - Specific Styles
+======================================== */
+
+/* Selection Card */
+.selection-card {
+    margin-bottom: 1.5rem;
+}
+
+.location-selector {
+    margin-bottom: 1.5rem;
+}
+
+.selected-locations {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+    min-height: 50px;
+    padding: 1rem;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+}
+
+.selected-location-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 0.5rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.selected-location-tag .remove-btn {
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.selected-location-tag .remove-btn:hover {
+    opacity: 1;
+}
+
+.add-location-section {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.add-location-section select {
+    flex: 1;
+}
+
+/* Mini Maps Row */
+.mini-maps-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.mini-map-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+.mini-map-card .map-header {
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.mini-map-card .mini-map {
+    height: 150px;
+}
+
+.mini-map-card .map-weather {
+    padding: 0.8rem 1rem;
+    background: var(--bg);
+    font-size: 0.85rem;
+}
+
+.mini-map-card .weather-temp {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+/* Comparison Table */
+.comparison-table th:first-child,
+.comparison-table td:first-child {
+    font-weight: 600;
+    background: var(--bg);
+    position: sticky;
+    left: 0;
+    z-index: 5;
+}
+
+.comparison-table td {
+    text-align: center;
+}
+
+.comparison-table .highlight-best {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+    font-weight: 600;
+}
+
+.comparison-table .highlight-worst {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+/* Chart */
+.chart-container {
+    height: 300px;
+    padding: 1rem;
+}
+
+/* Empty State for Selected */
+.selected-locations:empty::before {
+    content: 'No locations selected. Add locations using the dropdown below.';
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .add-location-section {
+        flex-direction: column;
+    }
+    
+    .mini-maps-row {
+        grid-template-columns: 1fr;
+    }
+}

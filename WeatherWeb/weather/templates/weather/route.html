@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tuyến đường – WeatherGIS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/route.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="gis-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>Phân tích tuyến đường</h2>
+        </div>
+
+        <div class="sidebar-content">
+            <p class="sidebar-description">
+                Phân tích không gian tuyến tính - Phân tích điều kiện thời tiết dọc theo đường đi giữa hai điểm.
+            </p>
+
+            <!-- Route Form -->
+            <form id="route-form">
+                <div class="form-group">
+                    <label>Điểm xuất phát (A)</label>
+                    <select id="start-location" class="form-control" required>
+                        <option value="">-- Chọn điểm xuất phát --</option>
+                        {% for loc in locations %}
+                        <option value="{{ loc.id }}" data-lat="{{ loc.latitude }}" data-lng="{{ loc.longitude }}">
+                            {{ loc.name|default:"Chưa đặt tên" }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="coord-display" id="start-coords"></div>
+                </div>
+
+                <div class="route-direction">
+                    <span>↓</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Điểm đích (B)</label>
+                    <select id="end-location" class="form-control" required>
+                        <option value="">-- Chọn điểm đích --</option>
+                        {% for loc in locations %}
+                        <option value="{{ loc.id }}" data-lat="{{ loc.latitude }}" data-lng="{{ loc.longitude }}">
+                            {{ loc.name|default:"Chưa đặt tên" }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="coord-display" id="end-coords"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="point-count">Số điểm nội suy</label>
+                    <input type="range" id="point-count" min="3" max="10" value="5" class="form-range">
+                    <div class="range-display">
+                        <span>3</span>
+                        <span id="point-count-value">5 điểm</span>
+                        <span>10</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    Phân tích thời tiết tuyến đường
+                </button>
+            </form>
+
+            <!-- Saved Routes -->
+            <div class="saved-routes" id="saved-routes">
+                <h3>Tuyến đường đã lưu</h3>
+                <ul class="route-list" id="route-list">
+                    {% for route in routes %}
+                    <li class="route-item" data-id="{{ route.id }}" 
+                        data-start="{{ route.start_location.id }}" 
+                        data-end="{{ route.end_location.id }}">
+                        <span class="route-name">{{ route.name }}</span>
+                        <span class="route-path">{{ route.start_location.name }} → {{ route.end_location.name }}</span>
+                    </li>
+                    {% empty %}
+                    <li class="empty-state-small">Chưa có tuyến đường nào</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Map & Results -->
+    <div class="route-main">
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+
+        <!-- Route Results -->
+        <div class="route-results card" id="route-results" style="display: none;">
+            <div class="card-header flex-between">
+                <h3>Dữ liệu thời tiết tuyến đường</h3>
+                <button class="btn btn-sm btn-secondary" id="save-route-btn">Lưu tuyến đường</button>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Vị trí</th>
+                            <th>Nhiệt độ</th>
+                            <th>Độ ẩm</th>
+                            <th>Gió</th>
+                            <th>Điều kiện</th>
+                        </tr>
+                    </thead>
+                    <tbody id="route-tbody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_data %}
+<script id="initial-data" type="application/json">
+{
+    "locations": {{ locations_json|safe }},
+    "routes": {{ routes_json|safe }},
+    "isAuthenticated": {{ is_authenticated|yesno:"true,false" }}
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/pages/route.js' %}"></script>
+{% endblock %}

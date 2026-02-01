@@ -1,7 +1,8 @@
 from django.urls import path
-from . import views
+
+# Analysis app URLs are now handled by weather app
+# This file is kept for potential future analysis-specific features
 
 urlpatterns = [
-    path('compare/', views.CompareView.as_view(), name='compare'),
-    path('route/', views.RouteView.as_view(), name='route'),
+    # All routes moved to weather app for consistency
 ]

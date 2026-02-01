@@ -1,0 +1,225 @@
+/* ========================================
+   Layers Page - Specific Styles
+======================================== */
+
+/* Sidebar Description */
+.sidebar-description {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+/* Layer Controls */
+.layer-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.layer-item {
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 1rem;
+    transition: var(--transition);
+}
+
+.layer-item:hover {
+    background: var(--primary-light);
+}
+
+.layer-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.layer-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Toggle Switch */
+.layer-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.layer-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--border);
+    border-radius: 24px;
+    transition: 0.3s;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+.layer-toggle input:checked + .toggle-slider {
+    background-color: var(--primary);
+}
+
+.layer-toggle input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+}
+
+/* Layer Options */
+.layer-options {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.8rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border);
+}
+
+.layer-options label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    min-width: 50px;
+}
+
+.layer-options .form-range {
+    flex: 1;
+}
+
+.opacity-value {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary);
+    min-width: 35px;
+    text-align: right;
+}
+
+/* Layer Legend */
+.layer-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.8rem;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.legend-gradient {
+    flex: 1;
+    height: 8px;
+    border-radius: 4px;
+}
+
+.temperature-legend .legend-gradient {
+    background: linear-gradient(to right, #3b82f6, #fbbf24, #ef4444);
+}
+
+.rain-legend .legend-gradient {
+    background: linear-gradient(to right, #f0f9ff, #0ea5e9, #1e3a8a);
+}
+
+.wind-legend .legend-gradient {
+    background: linear-gradient(to right, #d1fae5, #10b981, #064e3b);
+}
+
+.clouds-legend .legend-gradient {
+    background: linear-gradient(to right, #fefce8, #9ca3af, #374151);
+}
+
+/* Layer Info Section */
+.layer-info-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.layer-info-section h3 {
+    font-size: 0.9rem;
+    margin-bottom: 0.8rem;
+}
+
+.layer-info-section p {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
+}
+
+.layer-info-section .text-muted {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Legend Panel (on map) */
+.legend-panel {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: var(--card);
+    border-radius: var(--radius-sm);
+    padding: 1rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    min-width: 180px;
+}
+
+.legend-panel h4 {
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.legend-panel .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.legend-panel .legend-color {
+    width: 60px;
+    height: 8px;
+    border-radius: 4px;
+}
+
+.legend-panel .legend-color.temp {
+    background: linear-gradient(to right, #3b82f6, #fbbf24, #ef4444);
+}
+
+.legend-panel .legend-color.rain {
+    background: linear-gradient(to right, #f0f9ff, #0ea5e9);
+}
+
+.legend-panel .legend-color.wind {
+    background: linear-gradient(to right, #d1fae5, #10b981);
+}
+
+.legend-panel .legend-color.clouds {
+    background: linear-gradient(to right, #fefce8, #9ca3af);
+}
+
+/* Map Container override for positioning */
+.map-container {
+    position: relative;
+}
