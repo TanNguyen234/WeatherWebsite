@@ -39,19 +39,31 @@ OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY", "")
 
 class AdminBaseView(View):
     """
-    Base class for all admin views.
-    In DEBUG mode: open access for testing (no authentication required).
-    In production: requires authenticated staff or superuser.
+    Base class for all admin panel views.
+    Requires the request user to be authenticated AND to be staff, superuser,
+    or to have a UserProfile with role == 'admin'.
+    Users that do not pass this check are redirected to /login/.
+    (The DEBUG bypass has been removed – auth is always enforced.)
     """
     login_url = '/login/'
 
     def dispatch(self, request, *args, **kwargs):
-        if not settings.DEBUG:
-            if not request.user.is_authenticated:
-                return redirect(self.login_url)
-            if not (request.user.is_staff or request.user.is_superuser):
-                return redirect('map')
+        if not request.user.is_authenticated:
+            return redirect(f'{self.login_url}?next={request.path}')
+        if not self._is_admin(request.user):
+            # Authenticated but not admin → send back to the map
+            return redirect('map')
         return super().dispatch(request, *args, **kwargs)
+
+    @staticmethod
+    def _is_admin(user):
+        """Return True when the user has admin-level access."""
+        if user.is_staff or user.is_superuser:
+            return True
+        try:
+            return user.profile.role == 'admin'
+        except Exception:
+            return False
 
 
 # ---------------------------------------------------------------------------
@@ -141,7 +153,7 @@ class UserToggleActiveView(AdminBaseView):
     """Toggle a user's is_active status via POST (AJAX)."""
 
     def post(self, request):
-        if not settings.DEBUG and not (request.user.is_staff or request.user.is_superuser):
+        if not self._is_admin(request.user):
             return JsonResponse({'error': 'Forbidden'}, status=403)
 
         user_id = request.POST.get('user_id') or request.GET.get('user_id')
