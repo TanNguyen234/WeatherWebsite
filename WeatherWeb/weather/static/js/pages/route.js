@@ -1,27 +1,24 @@
 /**
- * filepath: d:\Projects\WeatherWebsite\WeatherWeb\weather\static\js\pages\route.js
- * Route Page - Linear spatial analysis
+ * Route Page – Real road routing via OSRM
+ * Road geometry: fetched via Django proxy /api/route-geometry/ → OSRM server-side
+ * Weather points: sampled evenly along the real road, fetched from our API
  */
 
 (function () {
     'use strict';
 
-    // ========================================
-    // State
-    // ========================================
-    const state = {
-        map: null,
-        routeLine: null,
-        markerGroup: null,
-        locations: [],
-        routes: [],
+    // ── State ──────────────────────────────────────────────────
+    var state = {
+        map:             null,
+        routePolyline:   null,   // L.polyline of the real road
+        markerGroup:     null,
+        locations:       [],
+        routes:          [],
         isAuthenticated: false,
-        currentRoute: null
+        currentRoute:    null    // { startId, endId, pointCount, osrmData, weatherPoints }
     };
 
-    // ========================================
-    // Initialization
-    // ========================================
+    // ── Init ───────────────────────────────────────────────────
     function init() {
         loadInitialData();
         loadFromSession();
@@ -30,332 +27,380 @@
     }
 
     function loadInitialData() {
-        const data = UIHelpers.parseInitialData('initial-data');
+        var data = UIHelpers.parseInitialData('initial-data');
         if (data) {
-            state.locations = data.locations || [];
-            state.routes = data.routes || [];
+            state.locations       = data.locations       || [];
+            state.routes          = data.routes          || [];
             state.isAuthenticated = data.isAuthenticated || false;
         }
     }
 
     function loadFromSession() {
-        const routePoints = JSON.parse(sessionStorage.getItem('routePoints') || '[]');
-        if (routePoints.length >= 2) {
-            // Try to match with saved locations
-            routePoints.forEach((point, index) => {
-                const matchedLoc = state.locations.find(l =>
-                    Math.abs(l.latitude - point.lat) < 0.0001 &&
-                    Math.abs(l.longitude - point.lng) < 0.0001
-                );
-                if (matchedLoc) {
-                    const selectId = index === 0 ? 'start-location' : 'end-location';
-                    document.getElementById(selectId).value = matchedLoc.id;
-                }
-            });
-        }
+        try {
+            var pts = JSON.parse(sessionStorage.getItem('routePoints') || '[]');
+            if (pts.length >= 2) {
+                pts.forEach(function (point, i) {
+                    var matched = state.locations.find(function (l) {
+                        return Math.abs(l.latitude  - point.lat) < 0.0001 &&
+                               Math.abs(l.longitude - point.lng) < 0.0001;
+                    });
+                    if (matched) {
+                        var sel = document.getElementById(i === 0 ? 'start-location' : 'end-location');
+                        if (sel) sel.value = matched.id;
+                    }
+                });
+            }
+        } catch (e) { /* ignore */ }
         sessionStorage.removeItem('routePoints');
     }
 
     function initializeMap() {
-        state.map = MapCore.initMap('map', {
-            center: [16.0, 106.0],
-            zoom: 6
-        });
-
+        state.map         = MapCore.initMap('map', { center: [16.0, 106.0], zoom: 6 });
         state.markerGroup = MapCore.createMarkerGroup(state.map);
     }
 
-    // ========================================
-    // Event Binding
-    // ========================================
+    // ── Events ─────────────────────────────────────────────────
     function bindEvents() {
-        // Form submission
         document.getElementById('route-form').addEventListener('submit', handleFormSubmit);
-
-        // Location selects
         document.getElementById('start-location').addEventListener('change', handleLocationChange);
         document.getElementById('end-location').addEventListener('change', handleLocationChange);
-
-        // Point count slider
         document.getElementById('point-count').addEventListener('input', handlePointCountChange);
-
-        // Route list click
         document.getElementById('route-list').addEventListener('click', handleRouteClick);
-
-        // Save route button
         document.getElementById('save-route-btn').addEventListener('click', handleSaveRoute);
     }
 
-    // ========================================
-    // Event Handlers
-    // ========================================
     function handleLocationChange(e) {
-        const select = e.target;
-        const option = select.options[select.selectedIndex];
-        const coordsId = select.id === 'start-location' ? 'start-coords' : 'end-coords';
-
-        if (option.value) {
-            const lat = parseFloat(option.dataset.lat);
-            const lng = parseFloat(option.dataset.lng);
-            document.getElementById(coordsId).textContent = UIHelpers.formatCoords(lat, lng);
+        var select  = e.target;
+        var option  = select.options[select.selectedIndex];
+        var coordId = select.id === 'start-location' ? 'start-coords' : 'end-coords';
+        if (option && option.value) {
+            document.getElementById(coordId).textContent =
+                UIHelpers.formatCoords(parseFloat(option.dataset.lat), parseFloat(option.dataset.lng));
         } else {
-            document.getElementById(coordsId).textContent = '';
+            document.getElementById(coordId).textContent = '';
         }
-
-        // Update map preview
         updateMapPreview();
     }
 
     function handlePointCountChange(e) {
-        document.getElementById('point-count-value').textContent = `${e.target.value} points`;
+        document.getElementById('point-count-value').textContent = e.target.value + ' điểm';
     }
 
     async function handleFormSubmit(e) {
         e.preventDefault();
 
-        const startSelect = document.getElementById('start-location');
-        const endSelect = document.getElementById('end-location');
-        const pointCount = parseInt(document.getElementById('point-count').value);        if (!startSelect.value || !endSelect.value) {
+        var startSel   = document.getElementById('start-location');
+        var endSel     = document.getElementById('end-location');
+        var pointCount = parseInt(document.getElementById('point-count').value, 10);
+
+        if (!startSel.value || !endSel.value) {
             UIHelpers.showToast('Vui lòng chọn cả điểm xuất phát và điểm đích', 'error');
             return;
         }
-
-        if (startSelect.value === endSelect.value) {
+        if (startSel.value === endSel.value) {
             UIHelpers.showToast('Điểm xuất phát và điểm đích phải khác nhau', 'error');
             return;
         }
 
-        const startId = parseInt(startSelect.value);
-        const endId = parseInt(endSelect.value);
+        var startId  = parseInt(startSel.value, 10);
+        var endId    = parseInt(endSel.value, 10);
+        var startOpt = startSel.options[startSel.selectedIndex];
+        var endOpt   = endSel.options[endSel.selectedIndex];
+        var startCoord = { lat: parseFloat(startOpt.dataset.lat), lng: parseFloat(startOpt.dataset.lng) };
+        var endCoord   = { lat: parseFloat(endOpt.dataset.lat),   lng: parseFloat(endOpt.dataset.lng) };
+
+        document.getElementById('route-results').style.display = 'block';
+        UIHelpers.showLoading(document.getElementById('route-tbody'));
+        setRouteStatus('Đang tìm đường giao thông…', 'info');
 
         try {
-            UIHelpers.showLoading(document.getElementById('route-tbody'));
-            document.getElementById('route-results').style.display = 'block';
+            // 1. Get actual road geometry from OSRM
+            var osrm = await fetchOsrmRoute(startCoord, endCoord);
+            setRouteStatus('Đang lấy dữ liệu thời tiết…', 'info');
 
-            const data = await WeatherApi.getRouteWeather(startId, endId, pointCount);
+            // 2. Sample N evenly-spaced points along the road
+            var roadCoords = osrm.geometry.coordinates; // [[lng,lat], …]
+            var sampled    = sampleRoutePoints(roadCoords, pointCount);
 
-            state.currentRoute = {
-                startId,
-                endId,
-                pointCount,
-                data
-            };
+            // 3. Fetch weather for each sampled road point
+            var weatherPoints = await fetchWeatherForPoints(sampled);
 
-            displayRouteResults(data);
-        } catch (error) {
-            UIHelpers.showToast(error.message, 'error');
+            state.currentRoute = { startId, endId, pointCount, osrmData: osrm, weatherPoints };
+
+            // 4. Render map + table
+            displayRouteResults(osrm, weatherPoints);
+            setRouteStatus(
+                formatDistance(osrm.distance) + ' · ' + formatDuration(osrm.duration),
+                'ok'
+            );
+        } catch (err) {
+            setRouteStatus('Lỗi: ' + err.message, 'error');
+            UIHelpers.showToast(err.message, 'error');
         }
     }
 
     function handleRouteClick(e) {
-        const item = e.target.closest('.route-item');
+        var item = e.target.closest('.route-item');
         if (!item) return;
-
-        const startId = item.dataset.start;
-        const endId = item.dataset.end;
-
-        document.getElementById('start-location').value = startId;
-        document.getElementById('end-location').value = endId;
-
-        // Trigger change events
+        document.getElementById('start-location').value = item.dataset.start;
+        document.getElementById('end-location').value   = item.dataset.end;
         document.getElementById('start-location').dispatchEvent(new Event('change'));
         document.getElementById('end-location').dispatchEvent(new Event('change'));
-    }    async function handleSaveRoute() {
-        if (!state.isAuthenticated) {
-            UIHelpers.showToast('Vui lòng đăng nhập để lưu tuyến đường', 'error');
-            return;
-        }
+    }
 
-        if (!state.currentRoute) {
-            UIHelpers.showToast('Không có tuyến đường để lưu', 'error');
-            return;
-        }
-
-        const name = prompt('Nhập tên cho tuyến đường này:');
+    async function handleSaveRoute() {
+        if (!state.isAuthenticated) { UIHelpers.showToast('Vui lòng đăng nhập để lưu', 'error'); return; }
+        if (!state.currentRoute)    { UIHelpers.showToast('Không có tuyến đường để lưu', 'error'); return; }
+        var name = prompt('Nhập tên cho tuyến đường này:');
         if (!name) return;
-
         try {
-            const response = await WeatherApi.post('/api/routes/', {
+            await WeatherApi.post('/api/routes/', {
                 name,
                 start_id: state.currentRoute.startId,
-                end_id: state.currentRoute.endId
+                end_id:   state.currentRoute.endId
             });
-
-            UIHelpers.showToast('Đã lưu tuyến đường thành công!', 'success');
-            // Reload page to update route list
+            UIHelpers.showToast('Đã lưu tuyến đường!', 'success');
             location.reload();
-        } catch (error) {
-            UIHelpers.showToast(error.message, 'error');
+        } catch (err) {
+            UIHelpers.showToast(err.message, 'error');
         }
     }
 
-    // ========================================
-    // Map Updates
-    // ========================================
-    function updateMapPreview() {
+    // ── OSRM Routing (via Django /api/route-geometry/ proxy) ────
+    /**
+     * Fetch road geometry through our backend proxy which calls OSRM.
+     * Returns { geometry: GeoJSON LineString, distance, duration }.
+     * Using a proxy avoids CORS issues and per-IP browser rate-limits.
+     */
+    async function fetchOsrmRoute(start, end) {
+        var url = '/api/route-geometry/'
+            + '?slat=' + start.lat.toFixed(6)
+            + '&slng=' + start.lng.toFixed(6)
+            + '&elat=' + end.lat.toFixed(6)
+            + '&elng=' + end.lng.toFixed(6);
+
+        var resp = await fetch(url);
+        var data = await resp.json();
+
+        if (!resp.ok) {
+            throw new Error(data.error || 'Lỗi định tuyến (' + resp.status + ')');
+        }
+        if (!data.geometry) {
+            throw new Error('Không tìm thấy đường đi giữa hai điểm đã chọn');
+        }
+
+        // cross_border is now always false from the backend (backend rejects
+        // routes that exit the country with a 422 error above).  Keep this
+        // guard for forward-compatibility only – it should never be reached.
+        if (data.cross_border) {
+            throw new Error(
+                'Không tìm được đường đi hoàn toàn trong lãnh thổ giữa hai điểm này. '
+                + 'Thử chọn điểm gần hơn hoặc nằm trên trục đường chính trong nước.'
+            );
+        }
+
+        return data; // { geometry, distance, duration, country, cross_border }
+    }
+
+    /**
+     * Return n evenly-spaced [lng,lat] pairs from the road coordinate array.
+     */
+    function sampleRoutePoints(coords, n) {
+        if (n <= 1)             return [coords[0]];
+        if (coords.length <= n) return coords.slice();
+        var result = [];
+        var step   = (coords.length - 1) / (n - 1);
+        for (var i = 0; i < n; i++) {
+            result.push(coords[Math.round(i * step)]);
+        }
+        return result;
+    }
+
+    /**
+     * Fetch current weather for every [lng,lat] pair.
+     * Returns array of { latitude, longitude, index, weather }.
+     */
+    async function fetchWeatherForPoints(coordPairs) {
+        var promises = coordPairs.map(function (pair, idx) {
+            var lat = pair[1];
+            var lng = pair[0];
+            return WeatherApi.getCurrentWeather(lat, lng)
+                .then(function (w) { return { latitude: lat, longitude: lng, index: idx, weather: w }; })
+                .catch(function ()  { return { latitude: lat, longitude: lng, index: idx, weather: null }; });
+        });
+        return Promise.all(promises);
+    }
+
+    // ── Map rendering ────────────────────────────────────────────
+    /**
+     * Preview road path when user selects locations (before form submit).
+     */
+    async function updateMapPreview() {
         MapCore.clearMarkerGroup(state.markerGroup);
-        if (state.routeLine) {
-            state.map.removeLayer(state.routeLine);
-            state.routeLine = null;
+        if (state.routePolyline) { state.map.removeLayer(state.routePolyline); state.routePolyline = null; }
+
+        var startSel = document.getElementById('start-location');
+        var endSel   = document.getElementById('end-location');
+        var points   = [];
+
+        if (startSel.value) {
+            var s = startSel.options[startSel.selectedIndex];
+            var sLat = parseFloat(s.dataset.lat), sLng = parseFloat(s.dataset.lng);
+            state.markerGroup.addLayer(
+                L.marker([sLat, sLng], { icon: colorIcon('green') })
+                 .bindPopup('<strong>Điểm xuất phát (A)</strong>')
+            );
+            points.push({ lat: sLat, lng: sLng });
         }
 
-        const startSelect = document.getElementById('start-location');
-        const endSelect = document.getElementById('end-location');
-
-        const points = [];        if (startSelect.value) {
-            const opt = startSelect.options[startSelect.selectedIndex];
-            const lat = parseFloat(opt.dataset.lat);
-            const lng = parseFloat(opt.dataset.lng);
-            const marker = L.marker([lat, lng], {
-                icon: createColoredIcon('green')
-            }).bindPopup('<strong>Điểm xuất phát (A)</strong>');
-            state.markerGroup.addLayer(marker);
-            points.push([lat, lng]);
+        if (endSel.value) {
+            var en = endSel.options[endSel.selectedIndex];
+            var eLat = parseFloat(en.dataset.lat), eLng = parseFloat(en.dataset.lng);
+            state.markerGroup.addLayer(
+                L.marker([eLat, eLng], { icon: colorIcon('red') })
+                 .bindPopup('<strong>Điểm đích (B)</strong>')
+            );
+            points.push({ lat: eLat, lng: eLng });
         }
 
-        if (endSelect.value) {
-            const opt = endSelect.options[endSelect.selectedIndex];
-            const lat = parseFloat(opt.dataset.lat);
-            const lng = parseFloat(opt.dataset.lng);
-            const marker = L.marker([lat, lng], {
-                icon: createColoredIcon('red')
-            }).bindPopup('<strong>Điểm đích (B)</strong>');
-            state.markerGroup.addLayer(marker);
-            points.push([lat, lng]);
-        }
-
-        // Draw line if both points selected
         if (points.length === 2) {
-            state.routeLine = MapCore.drawRoute(state.map, points, {
-                dashArray: '10, 10',
-                opacity: 0.6
-            });
-            MapCore.fitBounds(state.map, points);
+            // Show dashed road preview via OSRM proxy; no straight-line fallback.
+            setRouteStatus('Đang tải đường giao thông…', 'info');
+            fetchOsrmRoute(points[0], points[1])
+                .then(function (osrm) {
+                    state.routePolyline = drawRoadPolyline(osrm.geometry.coordinates, {
+                        dashArray: '8 5', opacity: 0.65, color: '#3b82f6'
+                    });
+                    MapCore.fitBounds(
+                        state.map,
+                        osrm.geometry.coordinates.map(function (c) { return [c[1], c[0]]; })
+                    );
+                    setRouteStatus('Chọn “Phân tích” để lấy dữ liệu thời tiết.', 'info');
+                })
+                .catch(function (err) {
+                    setRouteStatus('⚠ Không tải đường được: ' + err.message, 'error');
+                    // Fit to markers only, no polyline
+                    MapCore.fitBounds(state.map, [
+                        [points[0].lat, points[0].lng],
+                        [points[1].lat, points[1].lng]
+                    ]);
+                });
         } else if (points.length === 1) {
-            state.map.setView(points[0], 10);
+            state.map.setView([points[0].lat, points[0].lng], 10);
         }
     }
 
-    function displayRouteResults(data) {
-        // Clear and redraw map
+    /**
+     * Draw road path + weather markers after form submit.
+     */
+    function displayRouteResults(osrm, weatherPoints) {
         MapCore.clearMarkerGroup(state.markerGroup);
-        if (state.routeLine) {
-            state.map.removeLayer(state.routeLine);
-        }
+        if (state.routePolyline) { state.map.removeLayer(state.routePolyline); }
 
-        const points = data.route_points.map(p => [p.latitude, p.longitude]);
-
-        // Draw route line
-        state.routeLine = MapCore.drawRoute(state.map, points, {
-            color: '#2563eb',
-            weight: 4
-        });        // Add markers for each point
-        data.route_points.forEach((point, index) => {
-            const isStart = index === 0;
-            const isEnd = index === data.route_points.length - 1;
-
-            let icon;
-            let label;
-            if (isStart) {
-                icon = createColoredIcon('green');
-                label = 'Xuất phát (A)';
-            } else if (isEnd) {
-                icon = createColoredIcon('red');
-                label = 'Đích (B)';
-            } else {
-                icon = createSmallIcon();
-                label = `Điểm ${index + 1}`;
-            }
-
-            const popupContent = `
-                <div class="gis-popup">
-                    <div class="popup-header">${label}</div>
-                    <div class="popup-coords">${UIHelpers.formatCoords(point.latitude, point.longitude)}</div>
-                    <div class="weather-info">
-                        <p>Nhiệt độ: ${UIHelpers.formatTemp(point.weather.temperature)}</p>
-                        <p>Gió: ${UIHelpers.formatWind(point.weather.wind_speed)}</p>
-                        <p>Điều kiện: ${point.weather.description}</p>
-                    </div>
-                </div>
-            `;
-
-            const marker = L.marker([point.latitude, point.longitude], { icon })
-                .bindPopup(popupContent);
-            state.markerGroup.addLayer(marker);
+        // Solid road polyline
+        state.routePolyline = drawRoadPolyline(osrm.geometry.coordinates, {
+            color: '#2563eb', weight: 5, opacity: 0.88
         });
 
-        // Fit map to route
-        MapCore.fitBounds(state.map, points);
+        // Weather markers
+        weatherPoints.forEach(function (pt, i) {
+            var isStart = i === 0;
+            var isEnd   = i === weatherPoints.length - 1;
+            var icon    = isStart ? colorIcon('green') : isEnd ? colorIcon('red') : smallIcon();
+            var label   = isStart ? 'Xuất phát (A)' : isEnd ? 'Đích (B)' : 'Điểm ' + (i + 1);
+            var w       = pt.weather || {};
 
-        // Render table
-        renderRouteTable(data.route_points);
-    }    function renderRouteTable(routePoints) {
-        const tbody = document.getElementById('route-tbody');
+            var popup = '<div class="gis-popup">'
+                + '<div class="popup-header">' + label + '</div>'
+                + '<div class="popup-coords">' + UIHelpers.formatCoords(pt.latitude, pt.longitude) + '</div>'
+                + '<div class="weather-info">';
+            if (pt.weather) {
+                popup += '<p>🌡 ' + UIHelpers.formatTemp(w.temperature) + '</p>'
+                       + '<p>💨 ' + UIHelpers.formatWind(w.wind_speed)  + '</p>'
+                       + '<p>💧 ' + (w.humidity !== undefined ? w.humidity + ' %' : '–') + '</p>'
+                       + '<p>' + (w.description || '') + '</p>';
+            } else {
+                popup += '<p style="color:var(--danger)">Không có dữ liệu thời tiết</p>';
+            }
+            popup += '</div></div>';
 
-        const rows = routePoints.map((point, index) => {
-            const label = index === 0 ? 'A (Xuất phát)' : 
-                         index === routePoints.length - 1 ? 'B (Đích)' : 
-                         `${index + 1}`;
-            return `
-                <tr>
-                    <td>${label}</td>
-                    <td>${UIHelpers.formatCoords(point.latitude, point.longitude)}</td>
-                    <td>${UIHelpers.formatTemp(point.weather.temperature)}</td>
-                    <td>${UIHelpers.formatHumidity(point.weather.humidity)}</td>
-                    <td>${UIHelpers.formatWind(point.weather.wind_speed)}</td>
-                    <td>${point.weather.description}</td>
-                </tr>
-            `;
-        }).join('');
+            state.markerGroup.addLayer(L.marker([pt.latitude, pt.longitude], { icon }).bindPopup(popup));
+        });
 
-        tbody.innerHTML = rows;
+        // Fit to road
+        MapCore.fitBounds(state.map, osrm.geometry.coordinates.map(function (c) { return [c[1], c[0]]; }));
+
+        renderRouteTable(weatherPoints);
     }
 
-    // ========================================
-    // Helper Functions
-    // ========================================
-    function createColoredIcon(color) {
-        const colors = {
-            green: '#10b981',
-            red: '#ef4444',
-            blue: '#2563eb'
-        };
+    /**
+     * Draw L.polyline from OSRM [lng,lat] coordinate pairs.
+     */
+    function drawRoadPolyline(coords, opts) {
+        var latLngs  = coords.map(function (c) { return [c[1], c[0]]; });
+        var defaults = { color: '#3b82f6', weight: 4, opacity: 0.85 };
+        var options  = Object.assign({}, defaults, opts || {});
+        return L.polyline(latLngs, options).addTo(state.map);
+    }
 
+    function renderRouteTable(points) {
+        var tbody = document.getElementById('route-tbody');
+        if (!points || !points.length) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Không có điểm nào</td></tr>';
+            return;
+        }
+        tbody.innerHTML = points.map(function (pt, i) {
+            var label = i === 0 ? 'A (Xuất phát)' : i === points.length - 1 ? 'B (Đích)' : String(i + 1);
+            var w = pt.weather || {};
+            return '<tr>'
+                + '<td>' + label + '</td>'
+                + '<td>' + UIHelpers.formatCoords(pt.latitude, pt.longitude) + '</td>'
+                + '<td>' + (w.temperature !== undefined ? UIHelpers.formatTemp(w.temperature) : '–') + '</td>'
+                + '<td>' + (w.humidity    !== undefined ? w.humidity + ' %' : '–') + '</td>'
+                + '<td>' + (w.wind_speed  !== undefined ? UIHelpers.formatWind(w.wind_speed) : '–') + '</td>'
+                + '<td>' + (w.description || '–') + '</td>'
+                + '</tr>';
+        }).join('');
+    }
+
+    // ── Route status bar ─────────────────────────────────────────
+    function setRouteStatus(msg, type) {
+        var el = document.getElementById('route-status');
+        if (!el) return;
+        el.textContent = msg;
+        el.className   = 'route-status route-status--' + (type || 'info');
+    }
+
+    // ── Pure helper functions ─────────────────────────────────
+    function colorIcon(color) {
+        var palette = { green: '#10b981', red: '#ef4444', blue: '#2563eb' };
+        var fill    = palette[color] || color;
         return L.divIcon({
             className: 'custom-marker',
-            html: `<div style="
-                background: ${colors[color] || color};
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-                border: 3px solid white;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            "></div>`,
-            iconSize: [24, 24],
-            iconAnchor: [12, 12],
-            popupAnchor: [0, -12]
+            html: '<div style="background:' + fill + ';width:22px;height:22px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35)"></div>',
+            iconSize: [22, 22], iconAnchor: [11, 11], popupAnchor: [0, -12]
         });
     }
 
-    function createSmallIcon() {
+    function smallIcon() {
         return L.divIcon({
             className: 'custom-marker-small',
-            html: `<div style="
-                background: #2563eb;
-                width: 12px;
-                height: 12px;
-                border-radius: 50%;
-                border: 2px solid white;
-                box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-            "></div>`,
-            iconSize: [12, 12],
-            iconAnchor: [6, 6],
-            popupAnchor: [0, -6]
+            html: '<div style="background:#2563eb;width:11px;height:11px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)"></div>',
+            iconSize: [11, 11], iconAnchor: [5, 5], popupAnchor: [0, -6]
         });
     }
 
-    // ========================================
-    // Initialize
-    // ========================================
+    function formatDistance(metres) {
+        return metres >= 1000 ? (metres / 1000).toFixed(1) + ' km' : Math.round(metres) + ' m';
+    }
+
+    function formatDuration(seconds) {
+        var h = Math.floor(seconds / 3600);
+        var m = Math.floor((seconds % 3600) / 60);
+        if (h > 0) return h + ' giờ ' + m + ' phút';
+        return m + ' phút lái xe';
+    }
+
+    // ── Boot ────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', init);
 })();

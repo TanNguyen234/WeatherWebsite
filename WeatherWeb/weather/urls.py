@@ -13,7 +13,11 @@ from weather.views.api import (
     ForecastAPIView,
     CompareAPIView,
     RouteAPIView,
-    RouteCreateAPIView
+    RouteCreateAPIView,
+    LayerConfigAPIView,
+    LayerPointDataAPIView,
+    GeocodeProxyView,
+    RouteGeometryProxyView,
 )
 
 urlpatterns = [
@@ -24,12 +28,12 @@ urlpatterns = [
     path('route/', RouteView.as_view(), name='route'),
     path('layers/', LayersView.as_view(), name='layers'),
     path('about/', AboutView.as_view(), name='about'),
-    
+
     # Auth
     path('login/', LoginView.as_view(), name='login'),
     path('register/', RegisterView.as_view(), name='register'),
     path('logout/', LogoutView.as_view(), name='logout'),
-    
+
     # API endpoints
     path('api/weather/', WeatherAPIView.as_view(), name='api-weather'),
     path('api/locations/', LocationAPIView.as_view(), name='api-locations'),
@@ -38,4 +42,12 @@ urlpatterns = [
     path('api/compare/', CompareAPIView.as_view(), name='api-compare'),
     path('api/route/', RouteAPIView.as_view(), name='api-route'),
     path('api/routes/', RouteCreateAPIView.as_view(), name='api-routes'),
+
+    # Layer API
+    path('api/layers/', LayerConfigAPIView.as_view(), name='api-layer-config'),
+    path('api/layers/points/', LayerPointDataAPIView.as_view(), name='api-layer-points'),
+
+    # Third-party proxies (server-side geocoding + routing)
+    path('api/geocode/', GeocodeProxyView.as_view(), name='api-geocode'),
+    path('api/route-geometry/', RouteGeometryProxyView.as_view(), name='api-route-geometry'),
 ]

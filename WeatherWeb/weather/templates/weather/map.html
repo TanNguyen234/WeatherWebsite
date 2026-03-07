@@ -49,6 +49,24 @@
 
     <!-- Map Container -->
     <div class="map-container">
+        <!-- Place Search Overlay -->
+        <div class="map-search-overlay">
+            <div class="map-search-input-wrap">
+                <input type="text" id="place-search" class="map-search-input"
+                       placeholder="Tìm địa điểm trên bản đồ…" autocomplete="off">
+                <button id="place-search-btn" class="map-search-btn" type="button" title="Tìm kiếm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                </button>
+                <button id="place-search-clear" class="map-search-clear" type="button"
+                        style="display:none" title="Xóa">✕</button>
+            </div>
+            <ul id="search-results" class="map-search-results" style="display:none"></ul>
+        </div>
+
         <div id="map"></div>
     </div>
 </div>

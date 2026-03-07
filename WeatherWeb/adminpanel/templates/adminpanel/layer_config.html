@@ -1,0 +1,67 @@
+{% extends "adminpanel/base_admin.html" %}
+{% load static %}
+
+{% block title %}Lớp bản đồ – Admin WeatherGIS{% endblock %}
+{% block page_title %}Cấu hình lớp bản đồ{% endblock %}
+{% block page_subtitle %}{{ layers|length }} lớp đang được cấu hình{% endblock %}
+
+{% block content %}
+
+<div class="admin-layer-grid">
+    {% for layer in layers %}
+    <div class="admin-layer-detail-card">
+
+        <!-- Header -->
+        <div class="admin-layer-card-header">
+            <div class="admin-layer-card-title">
+                <span class="admin-layer-icon">{{ layer.icon }}</span>
+                <div>
+                    <div class="admin-layer-card-name">{{ layer.name }}</div>
+                    <div class="admin-text-muted admin-text-sm">{{ layer.name_en }} · {{ layer.unit }}</div>
+                </div>
+            </div>
+            <span class="admin-badge admin-badge--blue">{{ layer.category }}</span>
+        </div>
+
+        <!-- Description -->
+        <p class="admin-layer-desc">{{ layer.description }}</p>
+
+        <!-- Colour scale -->
+        <div class="admin-layer-scale-row">
+            <div class="admin-layer-scale"
+                 style="background: linear-gradient(to right, {% for c in layer.colors %}{{ c }}{% if not forloop.last %}, {% endif %}{% endfor %})">
+            </div>
+            <div class="admin-layer-scale-labels">
+                {% for label in layer.legend_labels %}
+                <span>{{ label }}</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- OWM Layer code -->
+        <div class="admin-layer-meta-row">
+            <span class="admin-layer-meta-label">OWM layer code</span>
+            <code class="admin-code">{{ layer.owm_layer }}</code>
+        </div>
+
+        <!-- Tile URL -->
+        <div class="admin-layer-meta-row">
+            <span class="admin-layer-meta-label">Tile URL</span>
+            <div class="admin-url-chip">
+                <code class="admin-code admin-code--small">{{ layer.tile_url }}</code>
+            </div>
+        </div>
+
+        <!-- Value range -->
+        <div class="admin-layer-meta-row">
+            <span class="admin-layer-meta-label">Khoảng giá trị</span>
+            <span class="admin-text-muted">{{ layer.min_value }} – {{ layer.max_value }} {{ layer.unit }}</span>
+        </div>
+
+    </div>
+    {% empty %}
+    <p class="admin-text-muted">Không có lớp bản đồ nào được cấu hình.</p>
+    {% endfor %}
+</div>
+
+{% endblock %}

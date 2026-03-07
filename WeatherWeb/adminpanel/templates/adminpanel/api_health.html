@@ -1,0 +1,197 @@
+{% extends "adminpanel/base_admin.html" %}
+{% load static %}
+
+{% block title %}API Health – Admin WeatherGIS{% endblock %}
+{% block page_title %}Trạng thái API{% endblock %}
+{% block page_subtitle %}Kiểm tra kết nối với các dịch vụ bên ngoài{% endblock %}
+
+{% block page_actions %}
+<button class="admin-btn admin-btn--primary" id="refresh-health-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+    </svg>
+    Kiểm tra lại
+</button>
+{% endblock %}
+
+{% block content %}
+
+<div class="admin-health-grid">
+
+    <!-- OWM Status Card -->
+    <div class="admin-card admin-health-card" id="owm-card">
+        <div class="admin-health-icon-wrap">
+            <span class="admin-health-icon admin-health-icon--large" id="owm-icon">🌤</span>
+        </div>
+        <div class="admin-health-body">
+            <div class="admin-health-service">OpenWeatherMap API</div>
+            <div class="admin-health-url admin-text-muted admin-text-sm">
+                api.openweathermap.org/data/2.5/
+            </div>
+
+            <div class="admin-health-status-row" id="owm-status-row">
+                <div class="admin-health-indicator admin-health-indicator--loading" id="owm-indicator"></div>
+                <span class="admin-health-status-text" id="owm-status-text">Đang kiểm tra…</span>
+            </div>
+
+            <div class="admin-health-detail-row">
+                <span class="admin-health-detail-label">Độ trễ</span>
+                <span class="admin-health-detail-value admin-coord" id="owm-latency">–</span>
+            </div>
+
+            <div class="admin-health-detail-row">
+                <span class="admin-health-detail-label">API Key</span>
+                <span id="owm-key-status">–</span>
+            </div>
+
+            <div class="admin-health-detail-row">
+                <span class="admin-health-detail-label">Cập nhật lúc</span>
+                <span class="admin-text-muted admin-text-sm" id="owm-checked-at">–</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Tiles Card -->
+    <div class="admin-card admin-health-card" id="tiles-card">
+        <div class="admin-health-icon-wrap">
+            <span class="admin-health-icon admin-health-icon--large">🗺</span>
+        </div>
+        <div class="admin-health-body">
+            <div class="admin-health-service">OWM Map Tiles</div>
+            <div class="admin-health-url admin-text-muted admin-text-sm">
+                tile.openweathermap.org/map/
+            </div>
+
+            <div class="admin-health-status-row" id="tiles-status-row">
+                <div class="admin-health-indicator admin-health-indicator--loading" id="tiles-indicator"></div>
+                <span class="admin-health-status-text" id="tiles-status-text">Đang kiểm tra…</span>
+            </div>
+
+            <div class="admin-health-detail-row">
+                <span class="admin-health-detail-label">Độ trễ</span>
+                <span class="admin-health-detail-value admin-coord" id="tiles-latency">–</span>
+            </div>
+
+            <div class="admin-health-detail-row">
+                <span class="admin-health-detail-label">Cập nhật lúc</span>
+                <span class="admin-text-muted admin-text-sm" id="tiles-checked-at">–</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Response detail -->
+<div class="admin-card" id="owm-response-card" style="display:none">
+    <div class="admin-card-header">
+        <h2 class="admin-card-title">Chi tiết phản hồi</h2>
+        <button class="admin-btn admin-btn--ghost admin-btn--sm" id="close-response-btn">Đóng</button>
+    </div>
+    <div class="admin-card-body">
+        <pre class="admin-pre" id="owm-response-body">–</pre>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    "use strict";
+
+    var healthUrl = "{% url 'adminpanel:api-health-check' %}";
+
+    function setIndicator(el, state) {
+        /* state: loading | ok | error */
+        el.className = 'admin-health-indicator admin-health-indicator--' + state;
+    }
+
+    function formatTime(ts) {
+        var d = new Date(ts);
+        return d.toLocaleTimeString('vi-VN');
+    }
+
+    function checkHealth() {
+        var owmInd    = document.getElementById('owm-indicator');
+        var owmText   = document.getElementById('owm-status-text');
+        var owmLat    = document.getElementById('owm-latency');
+        var owmKey    = document.getElementById('owm-key-status');
+        var owmAt     = document.getElementById('owm-checked-at');
+        var owmCard   = document.getElementById('owm-card');
+        var tilesInd  = document.getElementById('tiles-indicator');
+        var tilesText = document.getElementById('tiles-status-text');
+        var tilesLat  = document.getElementById('tiles-latency');
+        var tilesAt   = document.getElementById('tiles-checked-at');
+        var tilesCard = document.getElementById('tiles-card');
+        var respCard  = document.getElementById('owm-response-card');
+        var respBody  = document.getElementById('owm-response-body');
+
+        setIndicator(owmInd, 'loading');
+        owmText.textContent = 'Đang kiểm tra…';
+
+        fetch(healthUrl)
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                var now = formatTime(Date.now());
+                var owm = data.owm || {};
+                var tiles = data.tiles || {};
+
+                /* ── OWM ── */
+                if (owm.ok) {
+                    setIndicator(owmInd, 'ok');
+                    owmText.textContent = 'Online';
+                    owmCard.classList.remove('admin-health-card--error');
+                    owmCard.classList.add('admin-health-card--ok');
+                } else {
+                    setIndicator(owmInd, 'error');
+                    owmText.textContent = owm.error || 'Offline';
+                    owmCard.classList.remove('admin-health-card--ok');
+                    owmCard.classList.add('admin-health-card--error');
+                }
+                owmLat.textContent = owm.latency_ms !== undefined ? owm.latency_ms + ' ms' : '–';
+                if (owm.has_key !== undefined) {
+                    owmKey.innerHTML = owm.has_key
+                        ? '<span class="admin-badge admin-badge--green">Đã cấu hình</span>'
+                        : '<span class="admin-badge admin-badge--yellow">Chưa có key</span>';
+                }
+                owmAt.textContent = now;
+
+                if (owm.response_preview) {
+                    respCard.style.display = '';
+                    respBody.textContent = JSON.stringify(owm.response_preview, null, 2);
+                }
+
+                /* ── Tiles ── */
+                if (tiles.ok) {
+                    setIndicator(tilesInd, 'ok');
+                    tilesText.textContent = 'Online';
+                    tilesCard.classList.remove('admin-health-card--error');
+                    tilesCard.classList.add('admin-health-card--ok');
+                } else {
+                    setIndicator(tilesInd, 'error');
+                    tilesText.textContent = tiles.error || 'Offline';
+                    tilesCard.classList.remove('admin-health-card--ok');
+                    tilesCard.classList.add('admin-health-card--error');
+                }
+                tilesLat.textContent = tiles.latency_ms !== undefined ? tiles.latency_ms + ' ms' : '–';
+                tilesAt.textContent = now;
+            })
+            .catch(function (err) {
+                setIndicator(owmInd, 'error');
+                owmText.textContent = 'Lỗi mạng';
+                setIndicator(tilesInd, 'error');
+                tilesText.textContent = 'Lỗi mạng';
+            });
+    }
+
+    document.getElementById('refresh-health-btn').addEventListener('click', checkHealth);
+    document.getElementById('close-response-btn').addEventListener('click', function () {
+        document.getElementById('owm-response-card').style.display = 'none';
+    });
+
+    /* Auto-check on page load */
+    checkHealth();
+}());
+</script>
+{% endblock %}

@@ -29,6 +29,10 @@
                 <li><a href="{% url 'route' %}" class="{% if request.resolver_match.url_name == 'route' %}active{% endif %}">Tuyến đường</a></li>
                 <li><a href="{% url 'layers' %}" class="{% if request.resolver_match.url_name == 'layers' %}active{% endif %}">Lớp bản đồ</a></li>
                 <li><a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}">Giới thiệu</a></li>
+                <!-- {% if user.is_staff %}
+                <li><a href="{% url 'adminpanel:dashboard' %}" class="nav-admin-link">⚙ Admin</a></li>
+                {% endif %} -->
+                <li><a href="{% url 'adminpanel:dashboard' %}" class="nav-admin-link">⚙ Admin</a></li>
             </ul>
         </nav>
 

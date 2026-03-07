@@ -1,0 +1,342 @@
+"""
+Admin Panel Views – WeatherGIS
+
+Provides a staff-only dashboard with:
+  - System overview metrics
+  - User management table (list + toggle active)
+  - Saved location browser
+  - Route browser
+  - API health check
+  - Layer configuration viewer
+
+Architecture:
+  - All views are class-based and inherit AdminBaseView to enforce staff-only access.
+  - Business logic is minimal; views delegate to services and model queries.
+  - No business logic is duplicated here; service layer owns logic.
+"""
+from django.views import View
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import get_user_model
+from django.http import JsonResponse
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+
+import os
+import requests
+
+from weather.models import UserLocation, Route
+from weather.services.layer_config import get_available_layers
+
+User = get_user_model()
+
+OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY", "")
+
+
+# ---------------------------------------------------------------------------
+# Access control mixin
+# ---------------------------------------------------------------------------
+
+class AdminBaseView(View):
+    """
+    Base class for all admin views.
+    In DEBUG mode: open access for testing (no authentication required).
+    In production: requires authenticated staff or superuser.
+    """
+    login_url = '/login/'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not settings.DEBUG:
+            if not request.user.is_authenticated:
+                return redirect(self.login_url)
+            if not (request.user.is_staff or request.user.is_superuser):
+                return redirect('map')
+        return super().dispatch(request, *args, **kwargs)
+
+
+# ---------------------------------------------------------------------------
+# Dashboard
+# ---------------------------------------------------------------------------
+
+class DashboardView(AdminBaseView):
+    """Main admin dashboard – full user directory with attributes."""
+
+    template_name = 'adminpanel/dashboard.html'
+
+    def get(self, request):
+        query = request.GET.get('q', '').strip()
+
+        total_users     = User.objects.count()
+        active_users    = User.objects.filter(is_active=True).count()
+        staff_users     = User.objects.filter(is_staff=True).count()
+        total_locations = UserLocation.objects.count()
+        total_routes    = Route.objects.count()
+
+        # All users (with optional search)
+        qs = User.objects.order_by('-date_joined')
+        if query:
+            qs = qs.filter(username__icontains=query) | qs.filter(email__icontains=query)
+
+        user_list = []
+        for u in qs:
+            user_list.append({
+                'user':           u,
+                'location_count': UserLocation.objects.filter(user=u).count(),
+                'route_count':    Route.objects.filter(user=u).count(),
+            })
+
+        # API status (fast check, no tile ping on dashboard)
+        api_status = _check_api_status()
+
+        context = {
+            'stats': {
+                'total_users':     total_users,
+                'active_users':    active_users,
+                'inactive_users':  total_users - active_users,
+                'staff_users':     staff_users,
+                'total_locations': total_locations,
+                'total_routes':    total_routes,
+            },
+            'users':      user_list,
+            'query':      query,
+            'api_status': api_status,
+        }
+        return render(request, self.template_name, context)
+
+
+# ---------------------------------------------------------------------------
+# Users
+# ---------------------------------------------------------------------------
+
+class UserListView(AdminBaseView):
+    """List all users with key attributes."""
+
+    template_name = 'adminpanel/users.html'
+
+    def get(self, request):
+        query = request.GET.get('q', '').strip()
+        users = User.objects.order_by('-date_joined')
+        if query:
+            users = users.filter(username__icontains=query) | \
+                    users.filter(email__icontains=query)
+
+        # Annotate each user with location count
+        user_list = []
+        for u in users:
+            user_list.append({
+                'user':            u,
+                'location_count':  UserLocation.objects.filter(user=u).count(),
+                'route_count':     Route.objects.filter(user=u).count(),
+            })
+
+        context = {
+            'users': user_list,
+            'query': query,
+        }
+        return render(request, self.template_name, context)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class UserToggleActiveView(AdminBaseView):
+    """Toggle a user's is_active status via POST (AJAX)."""
+
+    def post(self, request):
+        if not settings.DEBUG and not (request.user.is_staff or request.user.is_superuser):
+            return JsonResponse({'error': 'Forbidden'}, status=403)
+
+        user_id = request.POST.get('user_id') or request.GET.get('user_id')
+        if not user_id:
+            return JsonResponse({'error': 'user_id requis'}, status=400)
+        target = get_object_or_404(User, pk=user_id)
+
+        # Prevent deactivating own account
+        if target == request.user:
+            return JsonResponse({'error': 'Không thể vô hiệu hoá tài khoản của chính bạn'}, status=400)
+
+        target.is_active = not target.is_active
+        target.save(update_fields=['is_active'])
+
+        return JsonResponse({'success': True, 'is_active': target.is_active})
+
+
+# ---------------------------------------------------------------------------
+# Locations
+# ---------------------------------------------------------------------------
+
+class LocationListView(AdminBaseView):
+    """Browse all saved user locations."""
+
+    template_name = 'adminpanel/locations.html'
+
+    def get(self, request):
+        query = request.GET.get('q', '').strip()
+        locations = UserLocation.objects.select_related('user').order_by('-created_at')
+        if query:
+            locations = locations.filter(name__icontains=query) | \
+                        locations.filter(user__username__icontains=query)
+
+        context = {
+            'locations': locations[:200],
+            'total':     UserLocation.objects.count(),
+            'query':     query,
+        }
+        return render(request, self.template_name, context)
+
+
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
+
+class RouteListView(AdminBaseView):
+    """Browse all saved routes."""
+
+    template_name = 'adminpanel/routes.html'
+
+    def get(self, request):
+        query = request.GET.get('q', '').strip()
+        qs = Route.objects.select_related(
+            'user', 'start_location', 'end_location'
+        ).order_by('-created_at')
+        if query:
+            qs = qs.filter(name__icontains=query) | \
+                 qs.filter(user__username__icontains=query)
+
+        routes = []
+        for r in qs[:200]:
+            routes.append({
+                'route':    r,
+                'start':    r.start_location,
+                'end':      r.end_location,
+                'created_at': r.created_at,
+                'distance_km': None,
+            })
+
+        context = {
+            'routes': routes,
+            'total':  Route.objects.count(),
+            'query':  query,
+        }
+        return render(request, self.template_name, context)
+
+
+# ---------------------------------------------------------------------------
+# Layers configuration viewer
+# ---------------------------------------------------------------------------
+
+class LayerConfigView(AdminBaseView):
+    """Read-only view of weather layer configuration."""
+
+    template_name = 'adminpanel/layer_config.html'
+
+    def get(self, request):
+        layers = get_available_layers()
+        context = {
+            'layers':      layers,
+            'api_key_set': bool(OPENWEATHER_API_KEY),
+        }
+        return render(request, self.template_name, context)
+
+
+# ---------------------------------------------------------------------------
+# API Health
+# ---------------------------------------------------------------------------
+
+class APIHealthView(AdminBaseView):
+    """Live API health check endpoint."""
+
+    template_name = 'adminpanel/api_health.html'
+
+    def get(self, request):
+        status = _check_api_status()
+        context = {'api_status': status}
+        return render(request, self.template_name, context)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class APIHealthCheckView(AdminBaseView):
+    """JSON endpoint to re-run API health check (used by JS)."""
+
+    def get(self, request):
+        status = _check_api_status()
+        return JsonResponse(status)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _check_api_status() -> dict:
+    """
+    Ping OpenWeatherMap /weather and map tiles endpoint.
+    Returns a dict shaped for both the dashboard template and the JS health check:
+      {
+        'owm':   { ok, latency_ms, has_key, error, response_preview },
+        'tiles': { ok, latency_ms, error },
+        # Legacy / dashboard keys:
+        'owm_ok', 'owm_latency_ms', 'owm_error', 'has_key'
+      }
+    """
+    import time
+
+    has_key = bool(OPENWEATHER_API_KEY)
+    owm  = {'ok': False, 'latency_ms': None, 'has_key': has_key, 'error': None, 'response_preview': None}
+    tiles = {'ok': False, 'latency_ms': None, 'error': None}
+
+    # ── OWM current-weather ping ─────────────────────────────
+    if has_key:
+        try:
+            t0 = time.monotonic()
+            resp = requests.get(
+                'https://api.openweathermap.org/data/2.5/weather',
+                params={
+                    'lat':   21.0285,
+                    'lon':   105.8542,
+                    'appid': OPENWEATHER_API_KEY,
+                    'units': 'metric',
+                },
+                timeout=8,
+            )
+            owm['latency_ms'] = round((time.monotonic() - t0) * 1000)
+            if resp.status_code == 200:
+                owm['ok'] = True
+                try:
+                    owm['response_preview'] = resp.json()
+                except Exception:
+                    pass
+            elif resp.status_code == 401:
+                owm['error'] = 'API key không hợp lệ (401)'
+            else:
+                owm['error'] = f'HTTP {resp.status_code}'
+        except requests.Timeout:
+            owm['error'] = 'Timeout'
+        except Exception as exc:
+            owm['error'] = str(exc)
+    else:
+        owm['error'] = 'API key chưa cấu hình'
+
+    # ── Tile server ping (no key needed for HEAD) ─────────────
+    try:
+        t0 = time.monotonic()
+        resp = requests.head(
+            'https://tile.openweathermap.org/map/temp_new/5/25/15.png',
+            timeout=6,
+        )
+        tiles['latency_ms'] = round((time.monotonic() - t0) * 1000)
+        # OWM tile server returns 200 or 400 (bad key) – both mean it's reachable
+        tiles['ok'] = resp.status_code in (200, 400)
+        if not tiles['ok']:
+            tiles['error'] = f'HTTP {resp.status_code}'
+    except requests.Timeout:
+        tiles['error'] = 'Timeout'
+    except Exception as exc:
+        tiles['error'] = str(exc)
+
+    return {
+        'owm':   owm,
+        'tiles': tiles,
+        # Flat keys for dashboard template
+        'owm_ok':         owm['ok'],
+        'owm_latency_ms': owm['latency_ms'],
+        'owm_error':      owm['error'],
+        'has_key':        has_key,
+    }

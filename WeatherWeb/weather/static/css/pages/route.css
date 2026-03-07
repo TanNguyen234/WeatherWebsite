@@ -179,3 +179,18 @@
         max-height: 250px;
     }
 }
+
+/* ── Road routing status bar ─────────────────────────────────── */
+.route-status {
+    font-size: .78rem;
+    font-weight: 600;
+    padding: .2rem .5rem;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    min-height: 1.4rem;
+}
+.route-status--info  { color: var(--primary); background: rgba(59,130,246,.1); }
+.route-status--ok    { color: #10b981;        background: rgba(16,185,129,.1); }
+.route-status--error { color: #ef4444;        background: rgba(239,68,68,.1); }

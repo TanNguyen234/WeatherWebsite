@@ -1,0 +1,235 @@
+{% extends "adminpanel/base_admin.html" %}
+{% load static %}
+
+{% block title %}Dashboard – Admin WeatherGIS{% endblock %}
+{% block page_title %}Dashboard người dùng{% endblock %}
+{% block page_subtitle %}Quản lý toàn bộ người dùng và hoạt động của họ trên hệ thống{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'adminpanel:api-health' %}" class="admin-btn admin-btn--ghost">
+    {% if api_status.owm_ok %}
+    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;margin-right:6px"></span>API Online
+    {% else %}
+    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:6px"></span>API Offline
+    {% endif %}
+</a>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Stat strip ────────────────────────────────────────────── -->
+<section class="admin-stat-grid" style="margin-bottom:1.25rem">
+
+    <div class="admin-stat-card">
+        <div class="admin-stat-icon admin-stat-icon--blue">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+        </div>
+        <div class="admin-stat-body">
+            <span class="admin-stat-label">Tổng người dùng</span>
+            <span class="admin-stat-value">{{ stats.total_users }}</span>
+        </div>
+        <span class="admin-stat-meta">{{ stats.active_users }} đang hoạt động</span>
+    </div>
+
+    <div class="admin-stat-card">
+        <div class="admin-stat-icon admin-stat-icon--green">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+        </div>
+        <div class="admin-stat-body">
+            <span class="admin-stat-label">Hoạt động</span>
+            <span class="admin-stat-value">{{ stats.active_users }}</span>
+        </div>
+        <span class="admin-stat-meta">{{ stats.inactive_users }} bị vô hiệu hoá</span>
+    </div>
+
+    <div class="admin-stat-card">
+        <div class="admin-stat-icon admin-stat-icon--orange">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle>
+            </svg>
+        </div>
+        <div class="admin-stat-body">
+            <span class="admin-stat-label">Tổng vị trí</span>
+            <span class="admin-stat-value">{{ stats.total_locations }}</span>
+        </div>
+        <a href="{% url 'adminpanel:locations' %}" class="admin-stat-link">Chi tiết →</a>
+    </div>
+
+    <div class="admin-stat-card">
+        <div class="admin-stat-icon admin-stat-icon--purple">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+        </div>
+        <div class="admin-stat-body">
+            <span class="admin-stat-label">Tuyến đường</span>
+            <span class="admin-stat-value">{{ stats.total_routes }}</span>
+        </div>
+        <a href="{% url 'adminpanel:routes' %}" class="admin-stat-link">Chi tiết →</a>
+    </div>
+
+</section>
+
+<!-- ── Inline search ─────────────────────────────────────────── -->
+<div class="admin-card admin-toolbar-card" style="margin-bottom:1rem">
+    <form method="get" class="admin-search-row" id="dash-search-form">
+        <div class="admin-search-input-wrap">
+            <svg class="admin-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" name="q" value="{{ query|default:'' }}"
+                   id="dash-q"
+                   placeholder="Tìm người dùng theo tên đăng nhập, email…"
+                   class="admin-search-input" autocomplete="off">
+        </div>
+        <button type="submit" class="admin-btn admin-btn--primary">Tìm</button>
+        {% if query %}
+        <a href="{% url 'adminpanel:dashboard' %}" class="admin-btn admin-btn--ghost">Xóa</a>
+        {% endif %}
+        <span class="admin-text-muted admin-text-sm" style="margin-left:auto">{{ users|length }} người dùng</span>
+    </form>
+</div>
+
+<!-- ── User directory ────────────────────────────────────────── -->
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h2 class="admin-card-title">Danh sách người dùng – đầy đủ thuộc tính</h2>
+        <a href="{% url 'adminpanel:users' %}" class="admin-card-action">Trang quản lý đầy đủ →</a>
+    </div>
+    <div class="admin-card-body admin-card-body--flush">
+        <table class="admin-table admin-table--hover admin-table--compact">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Người dùng</th>
+                    <th>Họ tên</th>
+                    <th>Email</th>
+                    <th>Ngày đăng ký</th>
+                    <th>Đăng nhập cuối</th>
+                    <th>Vị trí</th>
+                    <th>Tuyến</th>
+                    <th>Vai trò</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in users %}
+                <tr id="dash-row-{{ row.user.pk }}" class="{% if not row.user.is_active %}admin-row--muted{% endif %}">
+                    <td class="admin-text-muted admin-text-sm">{{ forloop.counter }}</td>
+                    <td>
+                        <div class="admin-user-cell">
+                            <span class="admin-user-avatar admin-user-avatar--sm">{{ row.user.username|slice:":1"|upper }}</span>
+                            <span class="admin-user-name">{{ row.user.username }}</span>
+                        </div>
+                    </td>
+                    <td class="admin-text-muted admin-text-sm">
+                        {% if row.user.first_name or row.user.last_name %}
+                            {{ row.user.first_name }} {{ row.user.last_name }}
+                        {% else %}–{% endif %}
+                    </td>
+                    <td class="admin-text-muted admin-text-sm">{{ row.user.email|default:"–" }}</td>
+                    <td class="admin-text-muted admin-text-sm">{{ row.user.date_joined|date:"d/m/y H:i" }}</td>
+                    <td class="admin-text-muted admin-text-sm">
+                        {% if row.user.last_login %}{{ row.user.last_login|date:"d/m/y H:i" }}{% else %}–{% endif %}
+                    </td>
+                    <td class="admin-text-center admin-text-sm">
+                        <a href="{% url 'adminpanel:locations' %}?q={{ row.user.username }}" class="admin-stat-link">
+                            {{ row.location_count }}
+                        </a>
+                    </td>
+                    <td class="admin-text-center admin-text-sm">
+                        <a href="{% url 'adminpanel:routes' %}?q={{ row.user.username }}" class="admin-stat-link">
+                            {{ row.route_count }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if row.user.is_superuser %}
+                            <span class="admin-badge admin-badge--purple">Super</span>
+                        {% elif row.user.is_staff %}
+                            <span class="admin-badge admin-badge--blue">Staff</span>
+                        {% else %}
+                            <span class="admin-badge admin-badge--gray">User</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if row.user.is_active %}
+                            <span class="admin-badge admin-badge--green" id="dash-status-{{ row.user.pk }}">Hoạt động</span>
+                        {% else %}
+                            <span class="admin-badge admin-badge--red" id="dash-status-{{ row.user.pk }}">Vô hiệu</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if row.user.pk != request.user.pk %}
+                        <button class="admin-btn admin-btn--sm admin-btn--toggle {% if row.user.is_active %}admin-btn--warn{% else %}admin-btn--success{% endif %}"
+                                data-user-id="{{ row.user.pk }}"
+                                data-active="{{ row.user.is_active|yesno:'true,false' }}"
+                                data-prefix="dash">
+                            {% if row.user.is_active %}Vô hiệu{% else %}Kích hoạt{% endif %}
+                        </button>
+                        {% else %}
+                        <span class="admin-text-muted admin-text-sm">Bạn</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="11" class="admin-table-empty">
+                        {% if query %}Không tìm thấy kết quả cho "{{ query }}"{% else %}Chưa có người dùng nào{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<form id="dash-csrf-form" style="display:none">{% csrf_token %}</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    "use strict";
+    var csrfToken = document.querySelector('#dash-csrf-form [name=csrfmiddlewaretoken]').value;
+    var toggleUrl = "{% url 'adminpanel:user-toggle-active' %}";
+
+    document.querySelectorAll('.admin-btn--toggle').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var userId    = btn.dataset.userId;
+            var wasActive = btn.dataset.active === 'true';
+            var prefix    = btn.dataset.prefix || 'user';
+            btn.disabled  = true;
+            btn.textContent = '…';
+
+            fetch(toggleUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrfToken },
+                body: 'user_id=' + encodeURIComponent(userId)
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.error) { alert(data.error); btn.disabled = false; btn.textContent = wasActive ? 'Vô hiệu' : 'Kích hoạt'; return; }
+                var nowActive = data.is_active;
+                var badge = document.getElementById(prefix + '-status-' + userId);
+                var row   = document.getElementById(prefix + '-row-' + userId);
+                if (badge) { badge.textContent = nowActive ? 'Hoạt động' : 'Vô hiệu'; badge.className = 'admin-badge ' + (nowActive ? 'admin-badge--green' : 'admin-badge--red'); }
+                if (row)   { row.classList.toggle('admin-row--muted', !nowActive); }
+                btn.disabled = false;
+                btn.dataset.active = nowActive ? 'true' : 'false';
+                btn.textContent = nowActive ? 'Vô hiệu' : 'Kích hoạt';
+                btn.className = ['admin-btn admin-btn--sm admin-btn--toggle', nowActive ? 'admin-btn--warn' : 'admin-btn--success'].join(' ');
+                btn.dataset.prefix = prefix;
+            })
+            .catch(function () { btn.disabled = false; btn.textContent = wasActive ? 'Vô hiệu' : 'Kích hoạt'; alert('Lỗi mạng.'); });
+        });
+    });
+}());
+</script>
+{% endblock %}

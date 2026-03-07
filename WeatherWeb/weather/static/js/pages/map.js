@@ -14,6 +14,7 @@
         map: null,
         markerGroup: null,
         currentPopupMarker: null,
+        searchMarker: null,        // dedicated marker for geocoding search results
         locations: [],
         groups: [],
         isAuthenticated: false,
@@ -59,6 +60,9 @@
     // Event Binding
     // ========================================
     function bindEvents() {
+        // Place search
+        initPlaceSearch();
+
         // Group filter change
         const groupFilter = document.getElementById('group-filter');
         if (groupFilter) {
@@ -378,6 +382,241 @@
         routePoints.push({ lat, lng });
         sessionStorage.setItem('routePoints', JSON.stringify(routePoints));
         UIHelpers.showToast('Đã thêm vào tuyến đường. Vào trang Tuyến đường để tiếp tục.', 'success');
+    }
+
+    // ========================================
+    // Place Search  (proxy → fallback to direct Nominatim)
+    // ========================================
+    function initPlaceSearch() {
+        var input     = document.getElementById('place-search');
+        var results   = document.getElementById('search-results');
+        var clearBtn  = document.getElementById('place-search-clear');
+        var searchBtn = document.getElementById('place-search-btn');
+
+        if (!input || !results) return;
+
+        var debounceTimer = null;
+
+        function triggerSearch() {
+            var q = input.value.trim();
+            if (q.length < 2) {
+                showSearchMsg(results, 'Nhập ít nhất 2 ký tự để tìm kiếm', 'empty');
+                console.log("Searching for:", q);
+                return;
+            }
+            searchPlaces(q, results);
+        }
+
+        // Debounced auto-suggest while typing
+        input.addEventListener('input', function () {
+            var q = this.value.trim();
+            if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+            clearTimeout(debounceTimer);
+            if (q.length < 2) { hideSearchResults(results); return; }
+            debounceTimer = setTimeout(triggerSearch, 400);
+        });
+
+        // Enter key
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                clearTimeout(debounceTimer);
+                triggerSearch();
+            }
+        });
+
+        // Search button – stopPropagation so document mousedown doesn't close dropdown
+        if (searchBtn) {
+            searchBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                console.log("Click");
+                clearTimeout(debounceTimer);
+                triggerSearch();
+                input.focus();
+            });
+        }
+
+        // Clear button
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                input.value = '';
+                clearBtn.style.display = 'none';
+                hideSearchResults(results);
+                input.focus();
+            });
+        }
+
+        // Close on outside mousedown
+        document.addEventListener('mousedown', function (e) {
+            if (!e.target.closest('.map-search-overlay')) {
+                hideSearchResults(results);
+            }
+        });
+    }
+
+    function searchPlaces(query, resultsEl) {
+        showSearchMsg(resultsEl, 'Đang tìm…', 'loading');
+
+        // Primary: Django proxy (avoids CORS headers issue)
+        fetch('/api/geocode/?q=' + encodeURIComponent(query))
+            .then(function (res) {
+                if (!res.ok) throw new Error('proxy-' + res.status);
+                console.log("Query key search: ",query);
+                return res.json();
+            })
+            .then(function (data) {
+                if (data && data.error) throw new Error('proxy-error');
+                renderSearchResults(data, resultsEl);
+            })
+            .catch(function () {
+                // Fallback: call Nominatim directly (plain GET = no preflight = no CORS issue)
+                fetch('https://nominatim.openstreetmap.org/search?q=' +
+                      encodeURIComponent(query) +
+                      '&format=json&limit=6&addressdetails=0&accept-language=vi')
+                    .then(function (res) {
+                        if (!res.ok) throw new Error('HTTP ' + res.status);
+                        return res.json();
+                    })
+                    .then(function (data) { renderSearchResults(data, resultsEl); })
+                    .catch(function (err) { showSearchMsg(resultsEl, '⚠ ' + err.message, 'error'); });
+            });
+    }
+
+    function renderSearchResults(items, resultsEl) {
+        if (!items || items.length === 0) {
+            showSearchMsg(resultsEl, 'Không tìm thấy địa điểm', 'empty');
+            return;
+        }
+
+        var html = items.map(function (item) {
+            var lat  = parseFloat(item.lat);
+            var lng  = parseFloat(item.lon);
+            var name = (item.display_name || '').replace(/</g, '&lt;');
+            return '<li class="map-search-item" data-lat="' + lat + '" data-lng="' + lng + '">'
+                 + '<span class="map-search-item-name">' + name + '</span>'
+                 + '<span class="map-search-item-coords">' + lat.toFixed(4) + ', ' + lng.toFixed(4) + '</span>'
+                 + '</li>';
+        }).join('');
+
+        resultsEl.innerHTML = html;
+        resultsEl.style.display = 'block';
+
+        resultsEl.querySelectorAll('.map-search-item[data-lat]').forEach(function (li) {
+            li.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                e.stopPropagation(); // prevent document mousedown from closing list first
+                var lat      = parseFloat(li.dataset.lat);
+                var lng      = parseFloat(li.dataset.lng);
+                var nameEl   = li.querySelector('.map-search-item-name');
+                var inp      = document.getElementById('place-search');
+                var clrBtn   = document.getElementById('place-search-clear');
+
+                if (inp && nameEl) inp.value = nameEl.textContent;
+                if (clrBtn) clrBtn.style.display = 'block';
+                hideSearchResults(resultsEl);
+
+                var placeName = nameEl ? nameEl.textContent : '';
+                state.map.flyTo([lat, lng], 14, { animate: true, duration: 1 });
+                showSearchResultMarker(lat, lng, placeName);
+            });
+        });
+    }
+
+    // ========================================
+    // Search Result Marker – shows place name popup
+    // ========================================
+    /**
+     * Place a dedicated marker for the geocoding result.
+     * Popup shows: place name, coordinates, and action buttons.
+     * A separate "Xem thời tiết" button loads weather on demand
+     * without blocking the initial name display.
+     *
+     * Geocoding API: Nominatim (OpenStreetMap)
+     *   Primary:  GET /api/geocode/?q=…  (Django proxy → nominatim.openstreetmap.org/search)
+     *   Fallback: GET https://nominatim.openstreetmap.org/search?q=…&format=json  (direct)
+     * Both are FREE and require no API key.
+     */
+    function showSearchResultMarker(lat, lng, placeName) {
+        // Remove previous search marker
+        if (state.searchMarker) {
+            state.map.removeLayer(state.searchMarker);
+            state.searchMarker = null;
+        }
+
+        var shortName = placeName || (UIHelpers.formatCoords(lat, lng));
+        // Truncate very long display names for the popup header
+        var displayName = shortName.length > 80 ? shortName.substring(0, 77) + '…' : shortName;
+
+        var popupContent = '<div class="gis-popup search-result-popup">'
+            + '<div class="popup-header">📍 ' + displayName.replace(/</g, '&lt;') + '</div>'
+            + '<div class="popup-coords">' + UIHelpers.formatCoords(lat, lng) + '</div>'
+            + '<div class="popup-actions">'
+            + '<button class="btn-popup" data-action="load-weather-search" data-lat="' + lat + '" data-lng="' + lng + '">🌤 Xem thời tiết</button>'
+            + (state.isAuthenticated
+                ? '<button class="btn-popup btn-outline" data-action="save" data-lat="' + lat + '" data-lng="' + lng + '">💾 Lưu vị trí</button>'
+                : '')
+            + '</div>'
+            + '</div>';
+
+        // Use a distinct search-result icon (blue circle)
+        var searchIcon = L.divIcon({
+            className: 'search-result-marker',
+            html: '<div style="background:#2563eb;width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(37,99,235,.55);"></div>',
+            iconSize:    [20, 20],
+            iconAnchor:  [10, 10],
+            popupAnchor: [0, -12]
+        });
+
+        state.searchMarker = L.marker([lat, lng], { icon: searchIcon })
+            .bindPopup(popupContent, { maxWidth: 320 })
+            .addTo(state.map);
+        state.searchMarker.openPopup();
+    }
+
+    // ── "Xem thời tiết" button inside the search-result popup ───────────────
+    // We handle this via the existing handlePopupAction dispatcher.
+    // Add a case for 'load-weather-search':
+    // (The existing switch already covers 'save', so we just add this one below.)
+    // Override is done by hooking into document click delegation (already active).
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-action="load-weather-search"]');
+        if (!btn) return;
+        var lat = parseFloat(btn.dataset.lat);
+        var lng = parseFloat(btn.dataset.lng);
+        if (isNaN(lat) || isNaN(lng)) return;
+
+        btn.disabled = true;
+        btn.textContent = '⏳ Đang tải…';
+
+        WeatherApi.getCurrentWeather(lat, lng)
+            .then(function (weather) {
+                // Replace the popup content with full weather details
+                var weatherContent = UIHelpers.createWeatherPopupContent(
+                    { lat, lng, weather, name: null },
+                    { isAuthenticated: state.isAuthenticated }
+                );
+                if (state.searchMarker) {
+                    state.searchMarker.setPopupContent(weatherContent);
+                    state.searchMarker.openPopup();
+                }
+            })
+            .catch(function (err) {
+                if (btn) { btn.disabled = false; btn.textContent = '🌤 Xem thời tiết'; }
+                UIHelpers.showToast('Không lấy được thời tiết: ' + err.message, 'error');
+            });
+    });
+
+    function showSearchMsg(resultsEl, msg, type) {
+        resultsEl.innerHTML =
+            '<li class="map-search-item map-search-item--' + (type || 'empty') + '">' + msg + '</li>';
+        resultsEl.style.display = 'block';
+    }
+
+    function hideSearchResults(resultsEl) {
+        if (!resultsEl) return;
+        resultsEl.style.display = 'none';
+        resultsEl.innerHTML = '';
     }
 
     // ========================================

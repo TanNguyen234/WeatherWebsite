@@ -165,7 +165,7 @@ const UIHelpers = (function () {
     /**
      * Show toast notification
      * @param {string} message - Message to show
-     * @param {string} type - 'success', 'error', 'info'
+     * @param {string} type - 'success', 'error', 'warning', 'info'
      */
     function showToast(message, type = 'info') {
         // Remove existing toast
@@ -173,6 +173,13 @@ const UIHelpers = (function () {
         if (existingToast) {
             existingToast.remove();
         }
+
+        const colorMap = {
+            error:   '#ef4444',
+            success: '#10b981',
+            warning: '#f59e0b',
+            info:    '#2563eb',
+        };
 
         const toast = document.createElement('div');
         toast.className = `toast-notification toast-${type}`;
@@ -182,20 +189,24 @@ const UIHelpers = (function () {
             bottom: 20px;
             right: 20px;
             padding: 12px 24px;
-            background: ${type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#2563eb'};
+            background: ${colorMap[type] || colorMap.info};
             color: white;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             z-index: 9999;
+            max-width: 380px;
+            word-break: break-word;
             animation: slideIn 0.3s ease;
         `;
 
         document.body.appendChild(toast);
 
+        // Warnings stay visible longer so the user has time to read them
+        const duration = type === 'warning' ? 5000 : 3000;
         setTimeout(() => {
             toast.style.animation = 'slideOut 0.3s ease';
             setTimeout(() => toast.remove(), 300);
-        }, 3000);
+        }, duration);
     }
 
     /**

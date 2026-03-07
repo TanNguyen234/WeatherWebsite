@@ -1,0 +1,86 @@
+{% extends "adminpanel/base_admin.html" %}
+{% load static %}
+
+{% block title %}Tuyến đường – Admin WeatherGIS{% endblock %}
+{% block page_title %}Tuyến đường{% endblock %}
+{% block page_subtitle %}{{ routes|length }} tuyến đường{% if query %} khớp với "{{ query }}"{% endif %}{% endblock %}
+
+{% block content %}
+
+<div class="admin-card admin-toolbar-card">
+    <form method="get" class="admin-search-row">
+        <div class="admin-search-input-wrap">
+            <svg class="admin-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" name="q" value="{{ query }}"
+                   placeholder="Tìm theo tên điểm đầu hoặc điểm cuối…"
+                   class="admin-search-input" autocomplete="off">
+        </div>
+        <button type="submit" class="admin-btn admin-btn--primary">Tìm kiếm</button>
+        {% if query %}
+        <a href="{% url 'adminpanel:routes' %}" class="admin-btn admin-btn--ghost">Xóa bộ lọc</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="admin-card">
+    <div class="admin-card-body admin-card-body--flush">
+        <table class="admin-table admin-table--hover">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Điểm đầu</th>
+                    <th></th>
+                    <th>Điểm cuối</th>
+                    <th>Khoảng cách (km)</th>
+                    <th>Ngày tạo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in routes %}
+                <tr>
+                    <td class="admin-text-muted">{{ forloop.counter }}</td>
+                    <td>
+                        <div class="admin-location-cell">
+                            <span class="admin-route-dot admin-route-dot--start"></span>
+                            <div>
+                                <div>{{ row.start.name|default:"(Không tên)" }}</div>
+                                <div class="admin-coord admin-text-sm">
+                                    {{ row.start.latitude|floatformat:4 }},
+                                    {{ row.start.longitude|floatformat:4 }}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="admin-text-muted admin-text-center">→</td>
+                    <td>
+                        <div class="admin-location-cell">
+                            <span class="admin-route-dot admin-route-dot--end"></span>
+                            <div>
+                                <div>{{ row.end.name|default:"(Không tên)" }}</div>
+                                <div class="admin-coord admin-text-sm">
+                                    {{ row.end.latitude|floatformat:4 }},
+                                    {{ row.end.longitude|floatformat:4 }}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="admin-text-center admin-coord">
+                        {% if row.distance_km %}{{ row.distance_km|floatformat:1 }}{% else %}–{% endif %}
+                    </td>
+                    <td class="admin-text-muted">{{ row.created_at|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="admin-table-empty">
+                        {% if query %}Không tìm thấy tuyến đường nào{% else %}Chưa có tuyến đường nào{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

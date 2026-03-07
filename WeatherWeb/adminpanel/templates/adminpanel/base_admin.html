@@ -1,0 +1,84 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin – WeatherGIS{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/adminpanel/admin.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="admin-body">
+
+    <!-- ══ Admin navbar ══════════════════════════════════════════ -->
+    <header class="admin-topbar">
+        <div class="admin-brand">
+            <a href="{% url 'map' %}" class="admin-brand-back" title="Về trang chính">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </a>
+            <span class="admin-brand-logo">🌦</span>
+            <span class="admin-brand-name">WeatherGIS <em>Admin</em></span>
+        </div>
+
+        <nav class="admin-topnav">
+            <a href="{% url 'adminpanel:dashboard' %}"
+               class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+               Dashboard
+            </a>
+            <a href="{% url 'adminpanel:users' %}"
+               class="{% if request.resolver_match.url_name == 'users' %}active{% endif %}">
+               Người dùng
+            </a>
+            <a href="{% url 'adminpanel:locations' %}"
+               class="{% if request.resolver_match.url_name == 'locations' %}active{% endif %}">
+               Vị trí
+            </a>
+            <a href="{% url 'adminpanel:routes' %}"
+               class="{% if request.resolver_match.url_name == 'routes' %}active{% endif %}">
+               Tuyến đường
+            </a>
+            <a href="{% url 'adminpanel:layer-config' %}"
+               class="{% if request.resolver_match.url_name == 'layer-config' %}active{% endif %}">
+               Lớp bản đồ
+            </a>
+            <a href="{% url 'adminpanel:api-health' %}"
+               class="{% if request.resolver_match.url_name == 'api-health' %}active{% endif %}">
+               API Health
+            </a>
+        </nav>
+
+        <div class="admin-topbar-right">
+            <span class="admin-user-chip">
+                <span class="admin-user-avatar">{{ request.user.username|slice:":1"|upper }}</span>
+                {{ request.user.username }}
+                {% if request.user.is_superuser %}<span class="admin-role-badge">Super</span>{% endif %}
+            </span>
+            <a href="{% url 'logout' %}" class="admin-logout-btn">Đăng xuất</a>
+        </div>
+    </header>
+
+    <!-- ══ Page shell ════════════════════════════════════════════ -->
+    <main class="admin-main">
+
+        <!-- Page header -->
+        <div class="admin-page-header">
+            <div>
+                <h1 class="admin-page-title">{% block page_title %}{% endblock %}</h1>
+                <p class="admin-page-subtitle">{% block page_subtitle %}{% endblock %}</p>
+            </div>
+            <div class="admin-page-actions">
+                {% block page_actions %}{% endblock %}
+            </div>
+        </div>
+
+        <!-- Content -->
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="{% static 'js/adminpanel/admin.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

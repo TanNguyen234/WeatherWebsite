@@ -136,3 +136,165 @@
     background: linear-gradient(transparent, var(--card));
     pointer-events: none;
 }
+
+/* ========================================
+   Place Search Overlay (on top of map)
+======================================== */
+.map-search-overlay {
+    position: absolute;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(440px, calc(100% - 2rem));
+    z-index: 1100;  /* above Leaflet popups (700) and controls (800) */
+    pointer-events: none; /* don't block map clicks on the empty area */
+}
+
+.map-search-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    border-radius: var(--radius-sm);
+    pointer-events: auto; /* re-enable for the actual input row */
+}
+
+.map-search-icon {
+    position: absolute;
+    left: 0.75rem;
+    color: var(--text-muted);
+    pointer-events: none;
+    flex-shrink: 0;
+}
+
+.map-search-input {
+    width: 100%;
+    padding: 0.65rem 5rem 0.65rem 2.35rem;  /* right room for btn + clear */
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+.map-search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+}
+
+.map-search-input::placeholder {
+    color: var(--text-muted);
+}
+
+.map-search-clear {
+    position: absolute;
+    right: 3.6rem;   /* left of the search button */
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0.2rem 0.3rem;
+    line-height: 1;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+}
+
+.map-search-clear:hover {
+    color: var(--text);
+    background: var(--bg);
+}
+
+/* Search submit button */
+.map-search-btn {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 3.2rem;
+    background: var(--primary);
+    border: none;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+    pointer-events: auto;
+}
+
+.map-search-btn:hover {
+    background: var(--primary-hover);
+}
+
+.map-search-results {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    list-style: none;
+    margin: 0;
+    padding: 0.3rem 0;
+    z-index: 1101;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    max-height: 280px;
+    overflow-y: auto;
+    pointer-events: auto; /* re-enable clicks on result items */
+}
+
+.map-search-item {
+    padding: 0.55rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.13s;
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+}
+
+.map-search-item:last-child {
+    border-bottom: none;
+}
+
+.map-search-item:hover {
+    background: var(--primary-light);
+}
+
+.map-search-item-name {
+    font-size: 0.82rem;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+}
+
+.map-search-item-coords {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.map-search-item--loading,
+.map-search-item--empty,
+.map-search-item--error {
+    cursor: default;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 0.7rem 1rem;
+}
+
+.map-search-item--error {
+    color: var(--danger);
+}
+    color: var(--danger);
+}

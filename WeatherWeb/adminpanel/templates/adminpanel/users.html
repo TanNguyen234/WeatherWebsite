@@ -1,0 +1,164 @@
+{% extends "adminpanel/base_admin.html" %}
+{% load static %}
+
+{% block title %}Người dùng – Admin WeatherGIS{% endblock %}
+{% block page_title %}Quản lý người dùng{% endblock %}
+{% block page_subtitle %}{{ users|length }} kết quả{% if query %} cho "{{ query }}"{% endif %}{% endblock %}
+
+{% block content %}
+
+<!-- ── Search bar ────────────────────────────────────────────── -->
+<div class="admin-card admin-toolbar-card">
+    <form method="get" class="admin-search-row">
+        <div class="admin-search-input-wrap">
+            <svg class="admin-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" name="q" value="{{ query }}"
+                   placeholder="Tìm theo tên đăng nhập hoặc email…"
+                   class="admin-search-input" autocomplete="off">
+        </div>
+        <button type="submit" class="admin-btn admin-btn--primary">Tìm kiếm</button>
+        {% if query %}
+        <a href="{% url 'adminpanel:users' %}" class="admin-btn admin-btn--ghost">Xóa bộ lọc</a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- ── Table ─────────────────────────────────────────────────── -->
+<div class="admin-card">
+    <div class="admin-card-body admin-card-body--flush">
+        <table class="admin-table admin-table--hover">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Người dùng</th>
+                    <th>Email</th>
+                    <th>Ngày đăng ký</th>
+                    <th>Vị trí</th>
+                    <th>Tuyến</th>
+                    <th>Vai trò</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in users %}
+                <tr id="user-row-{{ row.user.pk }}" class="{% if not row.user.is_active %}admin-row--muted{% endif %}">
+                    <td class="admin-text-muted">{{ forloop.counter }}</td>
+                    <td>
+                        <div class="admin-user-cell">
+                            <span class="admin-user-avatar admin-user-avatar--sm">{{ row.user.username|slice:":1"|upper }}</span>
+                            <div>
+                                <div class="admin-user-name">{{ row.user.username }}</div>
+                                {% if row.user.first_name or row.user.last_name %}
+                                <div class="admin-text-muted admin-text-sm">{{ row.user.first_name }} {{ row.user.last_name }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="admin-text-muted">{{ row.user.email|default:"–" }}</td>
+                    <td class="admin-text-muted">{{ row.user.date_joined|date:"d/m/Y H:i" }}</td>
+                    <td class="admin-text-center">{{ row.location_count }}</td>
+                    <td class="admin-text-center">{{ row.route_count }}</td>
+                    <td>
+                        {% if row.user.is_superuser %}
+                            <span class="admin-badge admin-badge--purple">Superuser</span>
+                        {% elif row.user.is_staff %}
+                            <span class="admin-badge admin-badge--blue">Staff</span>
+                        {% else %}
+                            <span class="admin-badge admin-badge--gray">User</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if row.user.is_active %}
+                            <span class="admin-badge admin-badge--green" id="status-badge-{{ row.user.pk }}">Hoạt động</span>
+                        {% else %}
+                            <span class="admin-badge admin-badge--red" id="status-badge-{{ row.user.pk }}">Vô hiệu</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if row.user.pk != request.user.pk %}
+                        <button
+                            class="admin-btn admin-btn--sm admin-btn--toggle {% if row.user.is_active %}admin-btn--warn{% else %}admin-btn--success{% endif %}"
+                            data-user-id="{{ row.user.pk }}"
+                            data-active="{{ row.user.is_active|yesno:'true,false' }}"
+                            id="toggle-btn-{{ row.user.pk }}"
+                        >
+                            {% if row.user.is_active %}Vô hiệu{% else %}Kích hoạt{% endif %}
+                        </button>
+                        {% else %}
+                        <span class="admin-text-muted admin-text-sm">Bạn</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="admin-table-empty">
+                        {% if query %}Không tìm thấy kết quả cho "{{ query }}"{% else %}Chưa có người dùng nào{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<form id="toggle-csrf-form" style="display:none">{% csrf_token %}</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    "use strict";
+    var csrfToken = document.querySelector('#toggle-csrf-form [name=csrfmiddlewaretoken]').value;
+    var toggleUrl = "{% url 'adminpanel:user-toggle-active' %}";
+
+    document.querySelectorAll('.admin-btn--toggle').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var userId   = btn.dataset.userId;
+            var wasActive = btn.dataset.active === 'true';
+            btn.disabled = true;
+            btn.textContent = '…';
+
+            fetch(toggleUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken
+                },
+                body: 'user_id=' + encodeURIComponent(userId)
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    alert(data.error);
+                    btn.disabled = false;
+                    btn.textContent = wasActive ? 'Vô hiệu' : 'Kích hoạt';
+                    return;
+                }
+                var nowActive = data.is_active;
+                var badge = document.getElementById('status-badge-' + userId);
+                var row   = document.getElementById('user-row-' + userId);
+                if (badge) {
+                    badge.textContent = nowActive ? 'Hoạt động' : 'Vô hiệu';
+                    badge.className = 'admin-badge ' + (nowActive ? 'admin-badge--green' : 'admin-badge--red');
+                }
+                if (row) row.classList.toggle('admin-row--muted', !nowActive);
+                btn.disabled = false;
+                btn.dataset.active = nowActive ? 'true' : 'false';
+                btn.textContent = nowActive ? 'Vô hiệu' : 'Kích hoạt';
+                btn.className = ['admin-btn admin-btn--sm admin-btn--toggle',
+                    nowActive ? 'admin-btn--warn' : 'admin-btn--success'].join(' ');
+            })
+            .catch(function () {
+                btn.disabled = false;
+                btn.textContent = wasActive ? 'Vô hiệu' : 'Kích hoạt';
+                alert('Không thể thực hiện. Vui lòng thử lại.');
+            });
+        });
+    });
+}());
+</script>
+{% endblock %}

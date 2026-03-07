@@ -1,0 +1,68 @@
+{% extends "adminpanel/base_admin.html" %}
+{% load static %}
+
+{% block title %}Vị trí – Admin WeatherGIS{% endblock %}
+{% block page_title %}Vị trí đã lưu{% endblock %}
+{% block page_subtitle %}{{ locations|length }} vị trí{% if query %} khớp với "{{ query }}"{% endif %}{% endblock %}
+
+{% block content %}
+
+<div class="admin-card admin-toolbar-card">
+    <form method="get" class="admin-search-row">
+        <div class="admin-search-input-wrap">
+            <svg class="admin-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" name="q" value="{{ query }}"
+                   placeholder="Tìm theo tên vị trí…"
+                   class="admin-search-input" autocomplete="off">
+        </div>
+        <button type="submit" class="admin-btn admin-btn--primary">Tìm kiếm</button>
+        {% if query %}
+        <a href="{% url 'adminpanel:locations' %}" class="admin-btn admin-btn--ghost">Xóa bộ lọc</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="admin-card">
+    <div class="admin-card-body admin-card-body--flush">
+        <table class="admin-table admin-table--hover">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Tên vị trí</th>
+                    <th>Vĩ độ</th>
+                    <th>Kinh độ</th>
+                    <th>Ngày tạo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for loc in locations %}
+                <tr>
+                    <td class="admin-text-muted">{{ forloop.counter }}</td>
+                    <td>
+                        <div class="admin-location-cell">
+                            <svg class="admin-location-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            {{ loc.name|default:"(Không tên)" }}
+                        </div>
+                    </td>
+                    <td class="admin-coord">{{ loc.latitude|floatformat:6 }}</td>
+                    <td class="admin-coord">{{ loc.longitude|floatformat:6 }}</td>
+                    <td class="admin-text-muted">{{ loc.created_at|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="admin-table-empty">
+                        {% if query %}Không tìm thấy vị trí nào{% else %}Chưa có vị trí nào được lưu{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,127 +1,196 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Lớp bản đồ – WeatherGIS{% endblock %}
+{% block title %}Lớp bản đồ thời tiết – WeatherGIS{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pages/layers.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="gis-layout">
-    <!-- Sidebar -->
-    <aside class="sidebar">
+<div class="gis-layout layers-layout">
+
+    <!-- ═══════════════════════════════════════════
+         SIDEBAR
+    ═══════════════════════════════════════════ -->
+    <aside class="sidebar layers-sidebar">
+
+        <!-- Header -->
         <div class="sidebar-header">
-            <h2>Lớp bản đồ GIS</h2>
+            <div class="sidebar-title-row">
+                <span class="sidebar-icon">🗺</span>
+                <h2>Lớp thời tiết GIS</h2>
+            </div>
+            <span class="data-badge" id="data-source-badge">Đang tải…</span>
         </div>
 
-        <div class="sidebar-content">
-            <p class="sidebar-description">
-                Trừu tượng hóa lớp - Bật/tắt và điều chỉnh các lớp hiển thị thời tiết trên bản đồ.
+        <!-- Layer groups -->
+        <div class="sidebar-content" id="layer-panel">
+
+            {% for layer_id, layer in layers.items %}
+            <div class="layer-card {% if layer.enabled_by_default %}active{% endif %}"
+                 data-layer-id="{{ layer.id }}">
+
+                <!-- Card header: toggle + meta -->
+                <div class="layer-card-header">
+                    <label class="layer-toggle" title="Bật / tắt lớp {{ layer.name }}">
+                        <input type="checkbox"
+                               id="toggle-{{ layer.id }}"
+                               {% if layer.enabled_by_default %}checked{% endif %}>
+                        <span class="toggle-track">
+                            <span class="toggle-thumb"></span>
+                        </span>
+                    </label>
+
+                    <div class="layer-meta">
+                        <span class="layer-icon">{{ layer.icon }}</span>
+                        <div class="layer-title-group">
+                            <span class="layer-name">{{ layer.name }}</span>
+                            <span class="layer-name-en">{{ layer.name_en }}</span>
+                        </div>
+                    </div>
+
+                    <button class="layer-expand-btn" aria-label="Mở rộng">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Expandable body -->
+                <div class="layer-card-body {% if not layer.enabled_by_default %}collapsed{% endif %}">
+
+                    <p class="layer-description">{{ layer.description }}</p>
+
+                    <!-- Opacity control -->
+                    <div class="control-row">
+                        <label class="control-label">Độ trong suốt</label>
+                        <div class="range-group">
+                            <input type="range"
+                                   id="opacity-{{ layer.id }}"
+                                   class="range-slider"
+                                   min="0" max="100"
+                                   value="{{ layer.default_opacity|floatformat:0|default:'70' }}"
+                                   data-layer="{{ layer.id }}">
+                            <output class="range-output" id="opacity-output-{{ layer.id }}">
+                                {{ layer.default_opacity|floatformat:0|default:'70' }}%
+                            </output>
+                        </div>
+                    </div>
+
+                    <!-- Colour scale legend -->
+                    <div class="legend-scale">
+                        <div class="legend-gradient"
+                             style="background: linear-gradient(to right, {{ layer.colors.0 }}, {{ layer.colors.1 }}, {{ layer.colors.2 }});">
+                        </div>
+                        <div class="legend-ticks">
+                            {% for label in layer.legend_labels %}
+                            <span>{{ label }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="legend-unit">{{ layer.unit }}</div>
+                    </div>
+
+                    <!-- Live stats row (populated by JS) -->
+                    <div class="layer-stats" id="stats-{{ layer.id }}">
+                        <div class="stat-item">
+                            <span class="stat-label">Thấp nhất</span>
+                            <span class="stat-value" id="stat-min-{{ layer.id }}">—</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Trung bình</span>
+                            <span class="stat-value" id="stat-avg-{{ layer.id }}">—</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Cao nhất</span>
+                            <span class="stat-value" id="stat-max-{{ layer.id }}">—</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Map base selector -->
+        <div class="sidebar-section">
+            <h3 class="section-heading">Nền bản đồ</h3>
+            <div class="basemap-options">
+                <label class="basemap-radio">
+                    <input type="radio" name="basemap" value="osm" checked> OSM Standard
+                </label>
+                <label class="basemap-radio">
+                    <input type="radio" name="basemap" value="satellite"> ESRI Satellite
+                </label>
+                <label class="basemap-radio">
+                    <input type="radio" name="basemap" value="dark"> Dark
+                </label>
+            </div>
+        </div>
+
+        <!-- Info footer -->
+        <div class="sidebar-footer">
+            <p class="footer-note">
+                Dữ liệu: <a href="https://openweathermap.org" target="_blank" rel="noopener">OpenWeatherMap</a>
             </p>
-
-            <!-- Layer Controls -->
-            <div class="layer-controls">
-                <div class="layer-item">
-                    <div class="layer-header">
-                        <label class="layer-toggle">
-                            <input type="checkbox" id="layer-temperature" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span class="layer-name">Nhiệt độ</span>
-                    </div>
-                    <div class="layer-options">
-                        <label>Độ trong suốt</label>
-                        <input type="range" id="opacity-temperature" min="0" max="100" value="70" class="form-range">
-                        <span class="opacity-value">70%</span>
-                    </div>
-                    <div class="layer-legend temperature-legend">
-                        <span>Lạnh</span>
-                        <div class="legend-gradient"></div>
-                        <span>Nóng</span>
-                    </div>
-                </div>
-
-                <div class="layer-item">
-                    <div class="layer-header">
-                        <label class="layer-toggle">
-                            <input type="checkbox" id="layer-rain">
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span class="layer-name">Lượng mưa</span>
-                    </div>
-                    <div class="layer-options" style="display: none;">
-                        <label>Độ trong suốt</label>
-                        <input type="range" id="opacity-rain" min="0" max="100" value="70" class="form-range">
-                        <span class="opacity-value">70%</span>
-                    </div>
-                    <div class="layer-legend rain-legend" style="display: none;">
-                        <span>0mm</span>
-                        <div class="legend-gradient"></div>
-                        <span>50mm+</span>
-                    </div>
-                </div>
-
-                <div class="layer-item">
-                    <div class="layer-header">
-                        <label class="layer-toggle">
-                            <input type="checkbox" id="layer-wind">
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span class="layer-name">Tốc độ gió</span>
-                    </div>
-                    <div class="layer-options" style="display: none;">
-                        <label>Độ trong suốt</label>
-                        <input type="range" id="opacity-wind" min="0" max="100" value="70" class="form-range">
-                        <span class="opacity-value">70%</span>
-                    </div>
-                    <div class="layer-legend wind-legend" style="display: none;">
-                        <span>Yên tĩnh</span>
-                        <div class="legend-gradient"></div>
-                        <span>Mạnh</span>
-                    </div>
-                </div>
-
-                <div class="layer-item">
-                    <div class="layer-header">
-                        <label class="layer-toggle">
-                            <input type="checkbox" id="layer-clouds">
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span class="layer-name">Độ che phủ mây</span>
-                    </div>
-                    <div class="layer-options" style="display: none;">
-                        <label>Độ trong suốt</label>
-                        <input type="range" id="opacity-clouds" min="0" max="100" value="70" class="form-range">
-                        <span class="opacity-value">70%</span>
-                    </div>
-                    <div class="layer-legend clouds-legend" style="display: none;">
-                        <span>Quang đãng</span>
-                        <div class="legend-gradient"></div>
-                        <span>U ám</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Layer Info -->
-            <div class="layer-info-section">
-                <h3>Giới thiệu về lớp bản đồ</h3>
-                <p>Các lớp thời tiết hiển thị mô hình dữ liệu không gian trên bản đồ. Trong môi trường thực tế, chúng sẽ kết nối với các dịch vụ tile thời tiết thời gian thực.</p>
-                <p class="text-muted">Hiện đang hiển thị lớp mô phỏng.</p>
-            </div>
+            <p class="footer-note">Cập nhật mỗi 10 phút</p>
         </div>
     </aside>
 
-    <!-- Map Container -->
-    <div class="map-container">
+    <!-- ═══════════════════════════════════════════
+         MAP CONTAINER
+    ═══════════════════════════════════════════ -->
+    <div class="map-wrapper">
         <div id="map"></div>
-        
-        <!-- Legend Panel -->
-        <div class="legend-panel" id="legend-panel">
-            <h4>Chú giải</h4>
-            <div id="active-legends">
-                <!-- Populated by JS -->
+
+        <!-- Floating toolbar -->
+        <div class="map-toolbar">
+            <button class="toolbar-btn" id="btn-fit-vietnam" title="Khung nhìn Việt Nam">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                </svg>
+            </button>
+            <button class="toolbar-btn" id="btn-refresh-layers" title="Làm mới dữ liệu">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+            </button>
+            <button class="toolbar-btn" id="btn-toggle-labels" title="Hiện/ẩn nhãn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                    <line x1="7" y1="7" x2="7.01" y2="7"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Active layers overview chip bar -->
+        <div class="layer-chips" id="layer-chips"></div>
+
+        <!-- Map legend panel -->
+        <div class="map-legend" id="map-legend">
+            <div class="legend-header">
+                <span>Chú giải</span>
+                <button class="legend-close" id="btn-close-legend" title="Ẩn">×</button>
             </div>
+            <div class="legend-body" id="legend-body">
+                <p class="legend-empty">Không có lớp nào đang bật</p>
+            </div>
+        </div>
+
+        <!-- Coordinate & value info bar (bottom of map) -->
+        <div class="map-infobar" id="map-infobar">
+            <span id="infobar-coords">Di chuyển chuột trên bản đồ…</span>
+            <span class="infobar-sep">|</span>
+            <span id="infobar-value"></span>
+        </div>
+
+        <!-- Loading overlay -->
+        <div class="map-loading" id="map-loading">
+            <div class="loading-spinner"></div>
+            <span>Đang tải dữ liệu lớp…</span>
         </div>
     </div>
 </div>
@@ -130,7 +199,8 @@
 {% block page_data %}
 <script id="initial-data" type="application/json">
 {
-    "layers": {{ layers_json|safe }}
+    "layers": {{ layers_json|safe }},
+    "api_key": "{{ owm_api_key|default:'' }}"
 }
 </script>
 {% endblock %}
@@ -138,3 +208,4 @@
 {% block extra_js %}
 <script src="{% static 'js/pages/layers.js' %}"></script>
 {% endblock %}
+

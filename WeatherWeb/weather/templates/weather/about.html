@@ -11,7 +11,7 @@
 <div class="page-layout about-page">
     <div class="page-header-section">
         <h2>Giới thiệu WeatherGIS</h2>
-        <p>Tìm hiểu kiến trúc và nguyên tắc thiết kế của Nền tảng Thời tiết Web GIS</p>
+        <p>Tìm hiểu kiến trúc, API và nguyên tắc thiết kế của Nền tảng Thời tiết Web GIS</p>
     </div>
 
     <!-- MTV Architecture -->
@@ -23,7 +23,7 @@
             <div class="architecture-diagram">
                 <div class="arch-component model">
                     <h4>Model</h4>
-                    <p>Đối tượng không gian & Ý định người dùng</p>
+                    <p>Đối tượng không gian &amp; Ý định người dùng</p>
                     <ul>
                         <li>UserLocation</li>
                         <li>LocationGroup</li>
@@ -54,6 +54,121 @@
         </div>
     </section>
 
+    <!-- GIS API Layer -->
+    <section class="about-section">
+        <div class="card">
+            <div class="card-header">
+                <h3>Các API GIS đang sử dụng</h3>
+            </div>
+            <div class="api-grid">
+
+                <div class="api-card">
+                    <div class="api-badge api-badge--free">Miễn phí · Không cần API key</div>
+                    <h4>📍 Nominatim (OpenStreetMap)</h4>
+                    <p class="api-purpose">Geocoding / Reverse Geocoding</p>
+                    <ul>
+                        <li>
+                            <strong>Tìm địa điểm theo tên:</strong><br>
+                            <code>GET /api/geocode/?q=Ben Thanh Market</code><br>
+                            → Django proxy → <code>nominatim.openstreetmap.org/search</code>
+                        </li>
+                        <li>
+                            <strong>Xác định quốc gia của điểm:</strong><br>
+                            <code>GET nominatim.../reverse?lat=…&amp;lon=…&amp;zoom=3</code><br>
+                            → Trả về <code>address.country_code</code> (ISO-2)
+                        </li>
+                    </ul>
+                    <div class="principle-box" style="margin-top:.75rem">
+                        Proxy server-side tránh CORS và hạn chế User-Agent của browser.
+                    </div>
+                </div>
+
+                <div class="api-card">
+                    <div class="api-badge api-badge--free">Miễn phí · Không cần API key</div>
+                    <h4>🗺 OSRM (Open Source Routing Machine)</h4>
+                    <p class="api-purpose">Road Routing Engine</p>
+                    <ul>
+                        <li>
+                            <strong>Routing 2 điểm:</strong><br>
+                            <code>GET /api/route-geometry/?slat=…&amp;slng=…&amp;elat=…&amp;elng=…</code><br>
+                            → Django proxy → <code>router.project-osrm.org/route/v1/driving/</code>
+                        </li>
+                        <li>
+                            <strong>Routing nội địa (cùng quốc gia):</strong><br>
+                            3-waypoint: <code>start → midpoint → end</code><br>
+                            → Buộc OSRM không đi qua lãnh thổ nước khác
+                        </li>
+                        <li><strong>Trả về:</strong> GeoJSON LineString + khoảng cách + thời gian</li>
+                    </ul>
+                    <div class="principle-box" style="margin-top:.75rem">
+                        Leaflet chỉ <em>hiển thị</em> kết quả, không tính toán đường đi.
+                    </div>
+                </div>
+
+                <div class="api-card">
+                    <div class="api-badge api-badge--key">Cần API key</div>
+                    <h4>🌤 OpenWeatherMap</h4>
+                    <p class="api-purpose">Dữ liệu thời tiết thực tế</p>
+                    <ul>
+                        <li>Nhiệt độ, độ ẩm, tốc độ gió</li>
+                        <li>Gọi theo tọa độ (lat, lon)</li>
+                        <li>Lấy theo yêu cầu, không lưu vào DB</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Country-Aware Routing -->
+    <section class="about-section">
+        <div class="card highlight-card">
+            <div class="card-header">
+                <h3>Country-Aware Routing – Định tuyến nội địa</h3>
+            </div>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Chọn 2 điểm</h4>
+                        <p>Người dùng chọn điểm A và B trên trang Tuyến đường</p>
+                    </div>
+                </div>
+                <div class="flow-connector">→</div>
+                <div class="flow-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Detect quốc gia</h4>
+                        <p>Backend reverse-geocode cả 2 điểm qua Nominatim
+                           (<code>zoom=3</code>) để lấy <code>country_code</code></p>
+                    </div>
+                </div>
+                <div class="flow-connector">→</div>
+                <div class="flow-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>3-Waypoint OSRM</h4>
+                        <p>Nếu cùng nước → thêm midpoint: <code>A → midpoint → B</code>
+                           buộc đường đi không vòng ra nước khác</p>
+                    </div>
+                </div>
+                <div class="flow-connector">→</div>
+                <div class="flow-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>Validate Geometry</h4>
+                        <p>Kiểm tra từng tọa độ với bounding box quốc gia → nếu thoát biên giới
+                           → cảnh báo <code>cross_border: true</code></p>
+                    </div>
+                </div>
+            </div>
+            <div class="principle-box">
+                <strong>Kết quả:</strong> Route giữa 2 điểm cùng quốc gia luôn đi theo mạng lưới
+                đường giao thông nội địa, không đi vòng qua lãnh thổ nước khác.
+            </div>
+        </div>
+    </section>
+
     <!-- Data Flow -->
     <section class="about-section">
         <div class="card">
@@ -65,35 +180,36 @@
                     <div class="step-number">1</div>
                     <div class="step-content">
                         <h4>Tương tác người dùng</h4>
-                        <p>Click vào bản đồ / Chọn vị trí</p>
-                        <code>map.on('click', handleClick)</code>
+                        <p>Click bản đồ hoặc tìm kiếm địa điểm theo tên</p>
+                        <code>map.on('click') / place-search input</code>
                     </div>
                 </div>
                 <div class="flow-connector">→</div>
                 <div class="flow-step">
                     <div class="step-number">2</div>
                     <div class="step-content">
-                        <h4>Gọi API</h4>
-                        <p>Gửi tọa độ đến backend</p>
-                        <code>POST /api/weather/</code>
+                        <h4>Gọi API proxy</h4>
+                        <code>GET /api/geocode/?q=…</code>
+                        <code>GET /api/weather/</code>
+                        <code>GET /api/route-geometry/</code>
                     </div>
                 </div>
                 <div class="flow-connector">→</div>
                 <div class="flow-step">
                     <div class="step-number">3</div>
                     <div class="step-content">
-                        <h4>Xử lý Service</h4>
-                        <p>Xác thực & lấy dữ liệu thời tiết</p>
-                        <code>get_current_weather(lat, lng)</code>
+                        <h4>Service Layer</h4>
+                        <p>Gọi API bên ngoài, validate, xử lý</p>
+                        <code>Nominatim / OSRM / OWM</code>
                     </div>
                 </div>
                 <div class="flow-connector">→</div>
                 <div class="flow-step">
                     <div class="step-number">4</div>
                     <div class="step-content">
-                        <h4>Phản hồi</h4>
-                        <p>Trả về JSON cho frontend</p>
-                        <code>{"temperature": 29.5, ...}</code>
+                        <h4>Hiển thị kết quả</h4>
+                        <p>Marker, popup, polyline trên Leaflet</p>
+                        <code>L.marker / L.polyline</code>
                     </div>
                 </div>
             </div>
@@ -118,8 +234,9 @@
                         <strong>Ví dụ trong ứng dụng:</strong>
                         <ul>
                             <li>Vị trí người dùng đã lưu</li>
-                            <li>Tuyến đường giữa hai điểm</li>
+                            <li>Tuyến đường đường bộ thực tế giữa 2 điểm</li>
                             <li>Thời tiết tại tọa độ cụ thể</li>
+                            <li>Kết quả tìm kiếm địa danh</li>
                         </ul>
                     </div>
                 </div>
@@ -134,7 +251,7 @@
                     <ul>
                         <li>Dữ liệu chuỗi thời gian</li>
                         <li>Hồ sơ lịch sử</li>
-                        <li>Dự báo & dự đoán</li>
+                        <li>Dự báo &amp; dự đoán</li>
                     </ul>
                     <div class="example-box">
                         <strong>Ví dụ trong ứng dụng:</strong>
@@ -159,7 +276,7 @@
                 <div class="reason-item">
                     <span class="reason-icon">Làm mới</span>
                     <h4>Dữ liệu cần cập nhật</h4>
-                    <p>Dữ liệu thời tiết thay đổi nhanh chóng. Dữ liệu được lưu trữ trở nên lỗi thời trong vài phút.</p>
+                    <p>Dữ liệu thời tiết thay đổi nhanh chóng. Dữ liệu lưu trữ trở nên lỗi thời trong vài phút.</p>
                 </div>
                 <div class="reason-item">
                     <span class="reason-icon">Chính xác</span>
@@ -236,7 +353,7 @@
                 <div class="tech-item">
                     <span class="tech-icon">Django</span>
                     <h4>Django 4.x</h4>
-                    <p>Backend Framework</p>
+                    <p>Backend Framework (MTV)</p>
                 </div>
                 <div class="tech-item">
                     <span class="tech-icon">PostgreSQL</span>
@@ -249,9 +366,19 @@
                     <p>Bản đồ tương tác</p>
                 </div>
                 <div class="tech-item">
+                    <span class="tech-icon">OSM</span>
+                    <h4>Nominatim</h4>
+                    <p>Geocoding (OpenStreetMap)</p>
+                </div>
+                <div class="tech-item">
+                    <span class="tech-icon">OSRM</span>
+                    <h4>OSRM</h4>
+                    <p>Road Routing Engine</p>
+                </div>
+                <div class="tech-item">
                     <span class="tech-icon">OWM</span>
                     <h4>OpenWeatherMap</h4>
-                    <p>API thời tiết</p>
+                    <p>API thời tiết thực tế</p>
                 </div>
                 <div class="tech-item">
                     <span class="tech-icon">Chart.js</span>

@@ -1,16 +1,9 @@
-"""
-GIS Utilities - Spatial operations and data transformations
-All GIS-related logic lives here (pure functions when possible)
-"""
 from django.core.exceptions import ValidationError
 from weather.models import UserLocation, LocationGroup
-
+import math
 
 def validate_coordinates(lat, lng):
-    """
-    Validate latitude and longitude values
-    Returns True if valid, raises ValidationError otherwise
-    """
+   
     if lat is None or lng is None:
         raise ValidationError("Coordinates cannot be None")
     
@@ -27,9 +20,7 @@ def validate_coordinates(lat, lng):
 
 
 def create_user_location(user, lat, lng, name=None):
-    """
-    Create a new user location (spatial intent persistence)
-    """
+   
     validate_coordinates(lat, lng)
     
     location = UserLocation.objects.create(
@@ -42,37 +33,27 @@ def create_user_location(user, lat, lng, name=None):
 
 
 def list_user_locations(user):
-    """
-    Get all locations for a user
-    """
+
     return list(UserLocation.objects.filter(user=user).order_by('-created_at'))
 
 
 def get_location_by_id(user, location_id):
-    """
-    Get a specific location by ID
-    """
+ 
     return UserLocation.objects.filter(user=user, id=location_id).first()
 
 
 def delete_user_location(user, location_id):
-    """
-    Delete a user location
-    """
+
     return UserLocation.objects.filter(user=user, id=location_id).delete()
 
 
 def list_user_groups(user):
-    """
-    Get all location groups for a user
-    """
+
     return list(LocationGroup.objects.filter(user=user).order_by('-created_at'))
 
 
 def serialize_locations(locations):
-    """
-    Serialize location objects to JSON-safe dictionaries
-    """
+
     if not locations:
         return []
     
@@ -89,9 +70,7 @@ def serialize_locations(locations):
 
 
 def serialize_groups(groups):
-    """
-    Serialize group objects to JSON-safe dictionaries
-    """
+ 
     if not groups:
         return []
     
@@ -106,10 +85,7 @@ def serialize_groups(groups):
 
 
 def interpolate_points(lat1, lng1, lat2, lng2, n):
-    """
-    Generate n evenly spaced points along a line between two coordinates
-    Used for route weather analysis
-    """
+
     if n < 2:
         n = 2
     
@@ -128,13 +104,8 @@ def interpolate_points(lat1, lng1, lat2, lng2, n):
 
 
 def calculate_distance_km(lat1, lng1, lat2, lng2):
-    """
-    Calculate distance between two points using Haversine formula
-    Returns distance in kilometers
-    """
-    import math
-    
-    R = 6371  # Earth's radius in km
+    #Haversine
+    R = 6371
     
     lat1_rad = math.radians(lat1)
     lat2_rad = math.radians(lat2)

@@ -104,6 +104,13 @@ body {
     width: 100%;
 }
 
+/* Admin panel entry link – subtle orange tint to stand out */
+.nav-admin-link {
+    color: #f59e0b !important;
+    font-weight: 600;
+}
+.nav-admin-link:hover { color: #fbbf24 !important; }
+
 .auth-links {
     display: flex;
     align-items: center;
@@ -210,6 +217,7 @@ body {
 ======================================== */
 .map-container {
     flex: 1;
+    position: relative;   /* anchor for .map-search-overlay */
     background: var(--card);
     border-radius: var(--radius);
     overflow: hidden;
@@ -664,3 +672,23 @@ select.form-control {
         padding: 1rem;
     }
 }
+
+/* ========================================
+   LAYER VALUE TOOLTIP (Leaflet override)
+======================================== */
+.layer-value-tooltip {
+    background: rgba(15, 23, 42, 0.88);
+    border: none;
+    border-radius: 4px;
+    color: #f8fafc;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 5px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    white-space: nowrap;
+}
+
+.layer-value-tooltip::before {
+    display: none;
+}
+
