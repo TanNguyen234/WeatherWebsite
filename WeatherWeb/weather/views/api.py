@@ -146,20 +146,59 @@ class RouteGeometryProxyView(View):
 
     def _build_waypoint_coords(self, slat, slng, elat, elng, n_intermediate=4):
         """
-        Build an OSRM-style coordinate string with *n_intermediate* equally
-        spaced waypoints along the straight line from (slat, slng) to
-        (elat, elng).  More waypoints = tighter constraint on the path,
-        which prevents OSRM from routing through neighbouring countries.
-
-        Returns a semicolon-separated string:  'lng,lat;lng,lat;…'
+        Build an OSRM-style coordinate string.
+        For long North-South routes in Vietnam, we force the route to pass
+        through key coastal cities (QL1A) to avoid OSRM taking a shortcut via Laos/Cambodia.
         """
+        # Determine if this is a major North-South long-haul route
+        lat_diff = abs(elat - slat)
+        is_long_haul = lat_diff > 4.0  # roughly 400+ km north-south
+        
         points = [(slng, slat)]
-        for i in range(1, n_intermediate + 1):
-            frac = i / (n_intermediate + 1)
-            points.append((
-                slng + frac * (elng - slng),
-                slat + frac * (elat - slat),
-            ))
+        
+        if is_long_haul:
+            # Hardcoded coastal control points along QL1A
+            # We pick cities that anchor the route to the East coast
+            control_points = [
+                (106.1683, 20.4200), # Nam Dinh
+                (105.6813, 18.6733), # Vinh
+                (106.3125, 17.4694), # Dong Hoi
+                (107.5909, 16.4637), # Hue
+                (108.2022, 16.0544), # Da Nang
+                (108.8021, 15.1201), # Quang Ngai
+                (109.2197, 13.7753), # Quy Nhon
+                (109.1967, 12.2388), # Nha Trang
+                (108.1093, 10.9333), # Phan Thiet
+            ]
+            
+            # Filter control points that lie between start and end latitudes
+            min_lat, max_lat = min(slat, elat), max(slat, elat)
+            valid_controls = [pt for pt in control_points if min_lat < pt[1] < max_lat]
+            
+            # Sort control points depending on travel direction (North->South or South->North)
+            if slat > elat:
+                valid_controls.sort(key=lambda p: p[1], reverse=True) # North to South
+            else:
+                valid_controls.sort(key=lambda p: p[1]) # South to North
+                
+            # Use at most 4 evenly spaced control points to avoid hitting OSRM's waypoint limit
+            if len(valid_controls) > 4:
+                step = len(valid_controls) / 4
+                sampled_controls = [valid_controls[int(i * step)] for i in range(4)]
+            else:
+                sampled_controls = valid_controls
+                
+            points.extend(sampled_controls)
+            
+        else:
+            # Fallback to straight-line interpolation for short routes
+            for i in range(1, n_intermediate + 1):
+                frac = i / (n_intermediate + 1)
+                points.append((
+                    slng + frac * (elng - slng),
+                    slat + frac * (elat - slat),
+                ))
+                
         points.append((elng, elat))
         return ';'.join(f'{lng:.6f},{lat:.6f}' for lng, lat in points)
 
