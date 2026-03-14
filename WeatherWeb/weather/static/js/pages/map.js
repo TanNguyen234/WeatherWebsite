@@ -106,7 +106,9 @@
             const errorContent = createErrorPopup(lat, lng, error.message);
             state.currentPopupMarker.setPopupContent(errorContent);
         }
-    }    function createLoadingPopup(lat, lng) {
+    }
+
+    function createLoadingPopup(lat, lng) {
         return `
             <div class="gis-popup">
                 <div class="popup-header">Đang tải...</div>
@@ -150,12 +152,12 @@
         if (countEl) {
             countEl.textContent = state.locations.length;
         }
-    }    function renderMapMarkers() {
+    } function renderMapMarkers() {
         MapCore.clearMarkerGroup(state.markerGroup);
 
         state.locations.forEach(location => {
             const marker = L.marker([location.latitude, location.longitude]);
-            
+
             const popupContent = `
                 <div class="gis-popup">
                     <div class="popup-header">${location.name || 'Vị trí đã lưu'}</div>
@@ -171,7 +173,7 @@
                     </div>
                 </div>
             `;
-            
+
             marker.bindPopup(popupContent);
             state.markerGroup.addLayer(marker);
         });
@@ -187,7 +189,9 @@
     // Event Handlers
     // ========================================
     async function handleQuickAdd(e) {
-        e.preventDefault();        if (!state.isAuthenticated) {
+        e.preventDefault();
+
+        if (!state.isAuthenticated) {
             UIHelpers.showToast('Vui lòng đăng nhập để lưu vị trí', 'error');
             return;
         }
@@ -208,25 +212,21 @@
 
         try {
             const result = await WeatherApi.saveLocation(lat, lng, name);
-            
-            // Add to state
+
             state.locations.push(result.location);
-            
-            // Update UI
             renderLocationList();
             renderMapMarkers();
             updateLocationCount();
-            
-            // Clear form
+
             document.getElementById('quick-add-form').reset();
-            
-            // Pan to new location
             MapCore.panTo(state.map, lat, lng, 10);
-              UIHelpers.showToast('Đã lưu vị trí thành công!', 'success');
+
+            UIHelpers.showToast('Đã lưu vị trí thành công!', 'success');
         } catch (error) {
             UIHelpers.showToast(error.message, 'error');
         }
     }
+
 
     function handleLocationListClick(e) {
         const item = e.target.closest('.location-item');
@@ -325,7 +325,7 @@
         try {
             const weather = await WeatherApi.getCurrentWeather(lat, lng);
             const location = state.locations.find(l => l.id === id);
-            
+
             const content = UIHelpers.createWeatherPopupContent({
                 lat, lng, weather,
                 name: location ? location.name : null
@@ -334,7 +334,7 @@
             // Find and update the marker popup
             state.markerGroup.eachLayer(marker => {
                 const markerLatLng = marker.getLatLng();
-                if (Math.abs(markerLatLng.lat - lat) < 0.0001 && 
+                if (Math.abs(markerLatLng.lat - lat) < 0.0001 &&
                     Math.abs(markerLatLng.lng - lng) < 0.0001) {
                     marker.setPopupContent(content);
                 }
@@ -342,7 +342,7 @@
         } catch (error) {
             UIHelpers.showToast(error.message, 'error');
         }
-    }    function addToCompare(lat, lng) {
+    } function addToCompare(lat, lng) {
         // Store in sessionStorage for compare page
         const compareList = JSON.parse(sessionStorage.getItem('compareLocations') || '[]');
         compareList.push({ lat, lng, timestamp: Date.now() });
@@ -365,9 +365,9 @@
     // Place Search  (proxy → fallback to direct Nominatim)
     // ========================================
     function initPlaceSearch() {
-        var input     = document.getElementById('place-search');
-        var results   = document.getElementById('search-results');
-        var clearBtn  = document.getElementById('place-search-clear');
+        var input = document.getElementById('place-search');
+        var results = document.getElementById('search-results');
+        var clearBtn = document.getElementById('place-search-clear');
         var searchBtn = document.getElementById('place-search-btn');
 
         if (!input || !results) return;
@@ -446,8 +446,8 @@
             .catch(function () {
                 // Fallback: call Nominatim directly (plain GET = no preflight = no CORS issue)
                 fetch('https://nominatim.openstreetmap.org/search?q=' +
-                      encodeURIComponent(query) +
-                      '&format=json&limit=6&addressdetails=0&accept-language=vi')
+                    encodeURIComponent(query) +
+                    '&format=json&limit=6&addressdetails=0&accept-language=vi')
                     .then(function (res) {
                         if (!res.ok) throw new Error('HTTP ' + res.status);
                         return res.json();
@@ -464,13 +464,13 @@
         }
 
         var html = items.map(function (item) {
-            var lat  = parseFloat(item.lat);
-            var lng  = parseFloat(item.lon);
+            var lat = parseFloat(item.lat);
+            var lng = parseFloat(item.lon);
             var name = (item.display_name || '').replace(/</g, '&lt;');
             return '<li class="map-search-item" data-lat="' + lat + '" data-lng="' + lng + '">'
-                 + '<span class="map-search-item-name">' + name + '</span>'
-                 + '<span class="map-search-item-coords">' + lat.toFixed(4) + ', ' + lng.toFixed(4) + '</span>'
-                 + '</li>';
+                + '<span class="map-search-item-name">' + name + '</span>'
+                + '<span class="map-search-item-coords">' + lat.toFixed(4) + ', ' + lng.toFixed(4) + '</span>'
+                + '</li>';
         }).join('');
 
         resultsEl.innerHTML = html;
@@ -480,11 +480,11 @@
             li.addEventListener('mousedown', function (e) {
                 e.preventDefault();
                 e.stopPropagation(); // prevent document mousedown from closing list first
-                var lat      = parseFloat(li.dataset.lat);
-                var lng      = parseFloat(li.dataset.lng);
-                var nameEl   = li.querySelector('.map-search-item-name');
-                var inp      = document.getElementById('place-search');
-                var clrBtn   = document.getElementById('place-search-clear');
+                var lat = parseFloat(li.dataset.lat);
+                var lng = parseFloat(li.dataset.lng);
+                var nameEl = li.querySelector('.map-search-item-name');
+                var inp = document.getElementById('place-search');
+                var clrBtn = document.getElementById('place-search-clear');
 
                 if (inp && nameEl) inp.value = nameEl.textContent;
                 if (clrBtn) clrBtn.style.display = 'block';
@@ -537,8 +537,8 @@
         var searchIcon = L.divIcon({
             className: 'search-result-marker',
             html: '<div style="background:#2563eb;width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(37,99,235,.55);"></div>',
-            iconSize:    [20, 20],
-            iconAnchor:  [10, 10],
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
             popupAnchor: [0, -12]
         });
 
