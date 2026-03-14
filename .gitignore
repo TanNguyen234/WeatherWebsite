@@ -15,3 +15,10 @@ db.sqlite3
 
 # OS
 .DS_Store
+
+# ML model artefacts (large binaries – generated locally by trainer.py)
+WeatherWeb/weather/ml/saved_models/weights/
+WeatherWeb/weather/ml/saved_models/hf_cache/
+WeatherWeb/weather/ml/saved_models/training_data/
+WeatherWeb/weather/ml/saved_models/training_meta.json
+!WeatherWeb/weather/ml/saved_models/.gitkeep

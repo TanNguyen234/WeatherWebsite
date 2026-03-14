@@ -16,9 +16,7 @@
         currentPopupMarker: null,
         searchMarker: null,        // dedicated marker for geocoding search results
         locations: [],
-        groups: [],
-        isAuthenticated: false,
-        selectedGroupId: null
+        isAuthenticated: false
     };
 
     // ========================================
@@ -36,7 +34,6 @@
         const data = UIHelpers.parseInitialData('initial-data');
         if (data) {
             state.locations = data.locations || [];
-            state.groups = data.groups || [];
             state.isAuthenticated = data.isAuthenticated || false;
         }
     }
@@ -62,12 +59,6 @@
     function bindEvents() {
         // Place search
         initPlaceSearch();
-
-        // Group filter change
-        const groupFilter = document.getElementById('group-filter');
-        if (groupFilter) {
-            groupFilter.addEventListener('change', handleGroupFilterChange);
-        }
 
         // Quick add form
         const quickAddForm = document.getElementById('quick-add-form');
@@ -149,18 +140,9 @@
         const container = document.getElementById('location-list');
         if (!container) return;
 
-        const filteredLocations = filterLocationsByGroup(state.locations);
-        UIHelpers.renderLocationList(container, filteredLocations, {
+        UIHelpers.renderLocationList(container, state.locations, {
             showDelete: state.isAuthenticated
         });
-    }
-
-    function filterLocationsByGroup(locations) {
-        if (!state.selectedGroupId) return locations;
-
-        // Filter by group - would need group items data
-        // For now, return all locations
-        return locations;
     }
 
     function updateLocationCount() {
@@ -204,11 +186,6 @@
     // ========================================
     // Event Handlers
     // ========================================
-    function handleGroupFilterChange(e) {
-        state.selectedGroupId = e.target.value || null;
-        renderLocationList();
-    }
-
     async function handleQuickAdd(e) {
         e.preventDefault();        if (!state.isAuthenticated) {
             UIHelpers.showToast('Vui lòng đăng nhập để lưu vị trí', 'error');
@@ -401,7 +378,6 @@
             var q = input.value.trim();
             if (q.length < 2) {
                 showSearchMsg(results, 'Nhập ít nhất 2 ký tự để tìm kiếm', 'empty');
-                console.log("Searching for:", q);
                 return;
             }
             searchPlaces(q, results);
@@ -429,7 +405,6 @@
         if (searchBtn) {
             searchBtn.addEventListener('click', function (e) {
                 e.stopPropagation();
-                console.log("Click");
                 clearTimeout(debounceTimer);
                 triggerSearch();
                 input.focus();
@@ -462,7 +437,6 @@
         fetch('/api/geocode/?q=' + encodeURIComponent(query))
             .then(function (res) {
                 if (!res.ok) throw new Error('proxy-' + res.status);
-                console.log("Query key search: ",query);
                 return res.json();
             })
             .then(function (data) {

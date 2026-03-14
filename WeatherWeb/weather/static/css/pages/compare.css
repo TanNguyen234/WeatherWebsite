@@ -1,43 +1,52 @@
 /* ========================================
-   Compare Page - Specific Styles
+   Compare Page - Minimal Dashboard Style
 ======================================== */
 
-/* Selection Card */
 .selection-card {
     margin-bottom: 1.5rem;
+    background: color-mix(in srgb, var(--card) 94%, var(--bg));
+    border: 1px solid var(--border);
 }
 
 .location-selector {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.1rem;
 }
 
 .selected-locations {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.8rem;
+    gap: 0.7rem;
+    min-height: 52px;
     margin-bottom: 1rem;
-    min-height: 50px;
-    padding: 1rem;
+    padding: 0.9rem;
+    border-radius: 12px;
+    border: 1px dashed var(--border);
     background: var(--bg);
-    border-radius: var(--radius-sm);
+}
+
+.selected-locations:empty::before {
+    content: 'Chưa chọn vị trí nào. Hãy thêm vị trí để bắt đầu so sánh.';
+    color: var(--text-muted);
+    font-size: 0.85rem;
 }
 
 .selected-location-tag {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.45rem;
+    padding: 0.42rem 0.78rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--border));
     background: var(--primary-light);
     color: var(--primary);
-    padding: 0.5rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 500;
+    font-size: 0.82rem;
+    font-weight: 600;
 }
 
 .selected-location-tag .remove-btn {
     background: none;
     border: none;
-    color: var(--primary);
+    color: currentColor;
     cursor: pointer;
     font-size: 1rem;
     line-height: 1;
@@ -52,60 +61,69 @@
 
 .add-location-section {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.55rem;
 }
 
 .add-location-section select {
     flex: 1;
 }
 
-/* Mini Maps Row */
 .mini-maps-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+    gap: 0.9rem;
+    margin-bottom: 1rem;
 }
 
 .mini-map-card {
     background: var(--card);
-    border-radius: var(--radius);
+    border-radius: 12px;
     border: 1px solid var(--border);
     overflow: hidden;
     box-shadow: var(--shadow);
+    transition: transform 0.16s ease;
+}
+
+.mini-map-card:hover {
+    transform: translateY(-1px);
 }
 
 .mini-map-card .map-header {
-    padding: 0.8rem 1rem;
+    padding: 0.72rem 0.9rem;
     border-bottom: 1px solid var(--border);
-    font-weight: 600;
-    font-size: 0.9rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    background: color-mix(in srgb, var(--card) 84%, var(--bg));
 }
 
 .mini-map-card .mini-map {
-    height: 150px;
+    height: 158px;
 }
 
 .mini-map-card .map-weather {
-    padding: 0.8rem 1rem;
+    padding: 0.72rem 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
     background: var(--bg);
-    font-size: 0.85rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
 }
 
 .mini-map-card .weather-temp {
-    font-size: 1.4rem;
+    font-size: 1.15rem;
     font-weight: 700;
     color: var(--primary);
 }
 
-/* Comparison Table */
 .comparison-table th:first-child,
 .comparison-table td:first-child {
-    font-weight: 600;
-    background: var(--bg);
     position: sticky;
     left: 0;
     z-index: 5;
+    background: color-mix(in srgb, var(--bg) 85%, white);
+    font-weight: 700;
 }
 
 .comparison-table td {
@@ -113,35 +131,30 @@
 }
 
 .comparison-table .highlight-best {
-    background: rgba(16, 185, 129, 0.1);
+    background: color-mix(in srgb, var(--success) 14%, white);
     color: var(--success);
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .comparison-table .highlight-worst {
-    background: rgba(239, 68, 68, 0.1);
+    background: color-mix(in srgb, var(--danger) 12%, white);
     color: var(--danger);
+    font-weight: 700;
 }
 
-/* Chart */
 .chart-container {
-    height: 300px;
-    padding: 1rem;
+    height: 320px;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--card) 90%, var(--bg));
 }
 
-/* Empty State for Selected */
-.selected-locations:empty::before {
-    content: 'No locations selected. Add locations using the dropdown below.';
-    color: var(--text-muted);
-    font-size: 0.85rem;
-}
-
-/* Responsive */
 @media (max-width: 768px) {
     .add-location-section {
         flex-direction: column;
     }
-    
+
     .mini-maps-row {
         grid-template-columns: 1fr;
     }

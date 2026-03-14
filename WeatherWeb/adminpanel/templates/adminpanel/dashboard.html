@@ -8,9 +8,9 @@
 {% block page_actions %}
 <a href="{% url 'adminpanel:api-health' %}" class="admin-btn admin-btn--ghost">
     {% if api_status.owm_ok %}
-    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;margin-right:6px"></span>API Online
+    <span class="admin-status-dot admin-status-dot--ok"></span>API Online
     {% else %}
-    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:6px"></span>API Offline
+    <span class="admin-status-dot admin-status-dot--error"></span>API Offline
     {% endif %}
 </a>
 {% endblock %}
@@ -18,7 +18,7 @@
 {% block content %}
 
 <!-- ── Stat strip ────────────────────────────────────────────── -->
-<section class="admin-stat-grid" style="margin-bottom:1.25rem">
+<section class="admin-stat-grid">
 
     <div class="admin-stat-card">
         <div class="admin-stat-icon admin-stat-icon--blue">
@@ -76,7 +76,7 @@
 </section>
 
 <!-- ── Inline search ─────────────────────────────────────────── -->
-<div class="admin-card admin-toolbar-card" style="margin-bottom:1rem">
+<div class="admin-card admin-toolbar-card">
     <form method="get" class="admin-search-row" id="dash-search-form">
         <div class="admin-search-input-wrap">
             <svg class="admin-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -91,7 +91,7 @@
         {% if query %}
         <a href="{% url 'adminpanel:dashboard' %}" class="admin-btn admin-btn--ghost">Xóa</a>
         {% endif %}
-        <span class="admin-text-muted admin-text-sm" style="margin-left:auto">{{ users|length }} người dùng</span>
+        <span class="admin-text-muted admin-text-sm admin-kpi-meta">{{ users|length }} người dùng</span>
     </form>
 </div>
 
@@ -189,7 +189,7 @@
     </div>
 </div>
 
-<form id="dash-csrf-form" style="display:none">{% csrf_token %}</form>
+<form id="dash-csrf-form" class="admin-hidden">{% csrf_token %}</form>
 
 {% endblock %}
 

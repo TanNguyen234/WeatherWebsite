@@ -25,6 +25,7 @@ ADMIN_ACCOUNT = {
     'email':     'admin@weathergis.local',
     'is_staff':  True,
     'is_superuser': True,
+    'is_active': True,
     'first_name': 'Admin',
     'last_name':  'WeatherGIS',
 }
@@ -35,6 +36,7 @@ USER_ACCOUNT = {
     'email':     'testuser@weathergis.local',
     'is_staff':  False,
     'is_superuser': False,
+    'is_active': True,
     'first_name': 'Test',
     'last_name':  'User',
 }
@@ -44,25 +46,16 @@ SAMPLE_LOCATIONS = [
         'name': 'Hà Nội – Hoàn Kiếm',
         'latitude':  21.0285,
         'longitude': 105.8542,
-        'address': 'Hoàn Kiếm, Hà Nội, Việt Nam',
-        'description': 'Trung tâm thành phố Hà Nội',
-        'is_favourite': True,
     },
     {
         'name': 'TP. Hồ Chí Minh – Bến Thành',
         'latitude':  10.7769,
         'longitude': 106.7009,
-        'address': 'Quận 1, TP. Hồ Chí Minh, Việt Nam',
-        'description': 'Trung tâm TP. HCM',
-        'is_favourite': True,
     },
     {
         'name': 'Đà Nẵng – Sơn Trà',
         'latitude':  16.0544,
         'longitude': 108.2022,
-        'address': 'Đà Nẵng, Việt Nam',
-        'description': 'Bán đảo Sơn Trà, Đà Nẵng',
-        'is_favourite': False,
     },
 ]
 
@@ -82,12 +75,12 @@ class Command(BaseCommand):
 
         # ── Admin account ────────────────────────────────────────────────────
         admin_user = self._upsert_user(ADMIN_ACCOUNT, reset=reset)
-        self._upsert_profile(admin_user, role=UserProfile.ROLE_ADMIN, bio='Quản trị viên hệ thống WeatherGIS')
+        self._upsert_profile(admin_user, role=UserProfile.ROLE_ADMIN)
         self.stdout.write(self.style.SUCCESS(f'  ✓ Admin  : {admin_user.username} / admin123'))
 
         # ── Regular user ─────────────────────────────────────────────────────
         test_user = self._upsert_user(USER_ACCOUNT, reset=reset)
-        self._upsert_profile(test_user, role=UserProfile.ROLE_USER, bio='Người dùng thử nghiệm')
+        self._upsert_profile(test_user, role=UserProfile.ROLE_USER)
         self.stdout.write(self.style.SUCCESS(f'  ✓ User   : {test_user.username} / user123'))
 
         # ── Sample locations for testuser ─────────────────────────────────────
@@ -99,9 +92,6 @@ class Command(BaseCommand):
                 longitude=loc_data['longitude'],
                 defaults={
                     'name':        loc_data['name'],
-                    'address':     loc_data['address'],
-                    'description': loc_data['description'],
-                    'is_favourite': loc_data['is_favourite'],
                 },
             )
             if created:
@@ -141,24 +131,19 @@ class Command(BaseCommand):
                 user.set_password(spec['password'])
                 changed.append('password')
             for field in ('is_staff', 'is_superuser', 'is_active'):
-                if getattr(user, field) != spec.get(field, False):
-                    setattr(user, field, spec.get(field, False))
+                if getattr(user, field) != spec.get(field, True):
+                    setattr(user, field, spec.get(field, True))
                     changed.append(field)
             if changed:
                 user.save(update_fields=changed)
         return user
 
-    def _upsert_profile(self, user, role, bio=''):
+    def _upsert_profile(self, user, role):
         """Create or update the UserProfile for a user."""
         profile, created = UserProfile.objects.get_or_create(
             user=user,
             defaults={
-                'role':           role,
-                'bio':            bio,
-                'default_zoom':   6,
-                'show_temperature': True,
-                'show_rain':      True,
-                'show_wind':      False,
+                'role': role,
             },
         )
         if not created and profile.role != role:

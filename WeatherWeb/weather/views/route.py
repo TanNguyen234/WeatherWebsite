@@ -1,7 +1,6 @@
 import json
 from django.views import View
 from django.shortcuts import render
-from django.http import JsonResponse
 from weather.services.gis_utils import list_user_locations, serialize_locations
 from weather.models import Route
 

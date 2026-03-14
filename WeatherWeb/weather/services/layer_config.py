@@ -2,8 +2,6 @@
 Layer Configuration - GIS layer abstraction
 Defines available weather visualization layers with OpenWeatherMap tile integration.
 """
-import os
-
 # OpenWeatherMap tile base
 OWM_TILE_BASE = "https://tile.openweathermap.org/map/{layer}/{z}/{x}/{y}.png"
 
@@ -130,12 +128,4 @@ def get_available_layers() -> dict:
 def get_layer_by_id(layer_id: str) -> dict | None:
     """Return a single layer configuration by its ID, or None if not found."""
     return get_available_layers().get(layer_id)
-
-
-def get_layers_by_category(category: str) -> dict:
-    """Return all layers that belong to a given category."""
-    return {
-        k: v for k, v in get_available_layers().items()
-        if v.get('category') == category
-    }
 

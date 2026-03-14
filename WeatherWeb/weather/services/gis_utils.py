@@ -1,6 +1,5 @@
 from django.core.exceptions import ValidationError
-from weather.models import UserLocation, LocationGroup
-import math
+from weather.models import UserLocation
 
 def validate_coordinates(lat, lng):
    
@@ -47,11 +46,6 @@ def delete_user_location(user, location_id):
     return UserLocation.objects.filter(user=user, id=location_id).delete()
 
 
-def list_user_groups(user):
-
-    return list(LocationGroup.objects.filter(user=user).order_by('-created_at'))
-
-
 def serialize_locations(locations):
 
     if not locations:
@@ -66,21 +60,6 @@ def serialize_locations(locations):
             'created_at': loc.created_at.isoformat() if loc.created_at else None
         }
         for loc in locations
-    ]
-
-
-def serialize_groups(groups):
- 
-    if not groups:
-        return []
-    
-    return [
-        {
-            'id': grp.id,
-            'name': grp.name,
-            'created_at': grp.created_at.isoformat() if grp.created_at else None
-        }
-        for grp in groups
     ]
 
 
@@ -101,20 +80,3 @@ def interpolate_points(lat1, lng1, lat2, lng2, n):
         })
     
     return points
-
-
-def calculate_distance_km(lat1, lng1, lat2, lng2):
-    #Haversine
-    R = 6371
-    
-    lat1_rad = math.radians(lat1)
-    lat2_rad = math.radians(lat2)
-    delta_lat = math.radians(lat2 - lat1)
-    delta_lng = math.radians(lng2 - lng1)
-    
-    a = (math.sin(delta_lat / 2) ** 2 + 
-         math.cos(lat1_rad) * math.cos(lat2_rad) * 
-         math.sin(delta_lng / 2) ** 2)
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    
-    return R * c

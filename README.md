@@ -2,6 +2,14 @@
 
 Django project cho ứng dụng thời tiết.
 
+## Cập nhật kiến trúc (03/2026)
+
+- Đã dọn dẹp schema để chỉ giữ các thực thể đang dùng thực tế: `user_profile`, `user_location`, `route`.
+- Đã loại bỏ các thành phần dư thừa/không được route tới (forecast flow cũ, script JS cũ, pipeline train ML thử nghiệm).
+- Predict page ưu tiên model pre-trained thực tế `amazon/chronos-t5-tiny` (HuggingFace).
+- Nếu môi trường máy chủ không đủ tài nguyên để nạp Chronos (ví dụ thiếu paging file cho `torch`), hệ thống tự fallback sang Open-Meteo forecast model (NWP) để vẫn trả kết quả dự đoán thực tế, không mock.
+- API chính cho Predict: `POST /api/predict/` trả về `api_result`, `ai_result`, `comparison` (delta, score, confidence).
+
 ---
 
 ## Yêu cầu hệ thống
@@ -63,7 +71,19 @@ DB_PORT=5432
 
 python WeatherWeb/manage.py migrate
 
+Lưu ý: bản refactor có migration dọn schema (`weather.0003_cleanup_unused_schema`) để xóa bảng/cột không dùng.
+
 ### 6. Chạy server
 
 python WeatherWeb/manage.py runserver
+
+---
+
+## AI Predict hoạt động thế nào
+
+- Input: tọa độ từ map hoặc location đã lưu + `horizon_hours`.
+- API hiện tại: lấy thời tiết real-time qua weather service.
+- AI result: suy luận từ Chronos pre-trained (đầu vào là chuỗi lịch sử giờ từ Open-Meteo archive), không train runtime.
+- Fallback runtime: dùng trực tiếp forecast pre-trained của Open-Meteo khi Chronos không khả dụng trên host.
+- Comparison: trả về chênh lệch API vs AI, prediction score và confidence để hiển thị biểu đồ trên Predict page.
 

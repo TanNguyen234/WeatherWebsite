@@ -1,54 +1,55 @@
 /* ========================================
-   Map Page - Specific Styles
+   Map Page - Modern Minimal GIS UI
 ======================================== */
 
-/* Quick Add Section */
-.quick-add-section {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border);
+.sidebar {
+    backdrop-filter: blur(10px);
 }
 
-.quick-add-section h3 {
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin-bottom: 0.8rem;
+.sidebar-header {
+    position: sticky;
+    top: 0;
+    background: color-mix(in srgb, var(--card) 92%, transparent);
+    z-index: 3;
 }
 
-.quick-add-section .form-row {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.quick-add-section .form-row input {
-    flex: 1;
-}
-
-.quick-add-section .form-control {
-    padding: 0.5rem;
-    font-size: 0.85rem;
-    margin-bottom: 0.5rem;
-}
-
-/* Location Count Badge */
 .location-count {
     background: var(--primary);
-    color: white;
-    font-size: 0.75rem;
-    padding: 0.2rem 0.6rem;
-    border-radius: 10px;
-    font-weight: 600;
+    color: #fff;
+    font-size: 0.76rem;
+    min-width: 1.9rem;
+    text-align: center;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    font-weight: 700;
+    box-shadow: var(--shadow);
 }
 
-/* Location Item Enhanced */
+.location-list {
+    display: grid;
+    gap: 0.6rem;
+    padding-right: 0.25rem;
+}
+
 .location-item {
     position: relative;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--card) 92%, var(--bg));
+}
+
+.location-item:hover {
+    border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
+    transform: translateY(-1px);
+}
+
+.location-item.active {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 16%, transparent);
 }
 
 .location-item .location-actions {
     position: absolute;
-    right: 0.5rem;
+    right: 0.6rem;
     top: 50%;
     transform: translateY(-50%);
     opacity: 0;
@@ -59,69 +60,36 @@
     opacity: 1;
 }
 
-/* Map Click Hint */
-.map-hint {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    padding: 0.6rem 1.2rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    z-index: 1000;
-    pointer-events: none;
+.quick-add-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--border);
 }
 
-/* Current Location Marker */
-.current-location-marker {
-    background: var(--primary);
-    border: 3px solid white;
-    border-radius: 50%;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
-
-/* Weather Card in Popup */
-.popup-weather-card {
-    background: var(--bg);
-    padding: 0.8rem;
-    border-radius: var(--radius-sm);
-    margin: 0.5rem 0;
-}
-
-.popup-weather-card .weather-main {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 0.5rem;
-}
-
-.popup-weather-card .weather-temp {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--primary);
-}
-
-.popup-weather-card .weather-desc {
-    font-size: 0.85rem;
+.quick-add-section h3 {
+    font-size: 0.86rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     color: var(--text-muted);
+    margin-bottom: 0.75rem;
 }
 
-.popup-weather-card .weather-details {
+.quick-add-section .form-row {
     display: flex;
-    gap: 1rem;
-    font-size: 0.8rem;
-    color: var(--text-muted);
+    gap: 0.55rem;
+    margin-bottom: 0.55rem;
 }
 
-/* Group Filter Enhancement */
-#group-filter {
-    font-size: 0.85rem;
-    padding: 0.5rem;
+.quick-add-section .form-row input {
+    flex: 1;
 }
 
-/* Sidebar Scroll Shadow */
+.quick-add-section .form-control {
+    padding: 0.56rem 0.65rem;
+    font-size: 0.84rem;
+    margin-bottom: 0.55rem;
+}
+
 .sidebar-content {
     position: relative;
 }
@@ -129,61 +97,57 @@
 .sidebar-content::after {
     content: '';
     position: absolute;
-    bottom: 0;
     left: 0;
     right: 0;
+    bottom: 0;
     height: 20px;
-    background: linear-gradient(transparent, var(--card));
     pointer-events: none;
+    background: linear-gradient(transparent, var(--card));
+}
+
+.map-container {
+    border-radius: calc(var(--radius) + 2px);
 }
 
 /* ========================================
-   Place Search Overlay (on top of map)
+   Place Search Overlay
 ======================================== */
 .map-search-overlay {
     position: absolute;
     top: 1rem;
     left: 50%;
     transform: translateX(-50%);
-    width: min(440px, calc(100% - 2rem));
-    z-index: 1100;  /* above Leaflet popups (700) and controls (800) */
-    pointer-events: none; /* don't block map clicks on the empty area */
+    width: min(460px, calc(100% - 2rem));
+    z-index: 1100;
+    pointer-events: none;
 }
 
 .map-search-input-wrap {
     position: relative;
     display: flex;
     align-items: center;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-    border-radius: var(--radius-sm);
-    pointer-events: auto; /* re-enable for the actual input row */
-}
-
-.map-search-icon {
-    position: absolute;
-    left: 0.75rem;
-    color: var(--text-muted);
-    pointer-events: none;
-    flex-shrink: 0;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    pointer-events: auto;
 }
 
 .map-search-input {
     width: 100%;
-    padding: 0.65rem 5rem 0.65rem 2.35rem;  /* right room for btn + clear */
-    background: var(--card);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
+    padding: 0.7rem 5rem 0.7rem 0.95rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--card) 95%, transparent);
     color: var(--text);
     font-size: 0.9rem;
     font-family: inherit;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
 .map-search-input:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 16%, transparent);
+    background: var(--card);
 }
 
 .map-search-input::placeholder {
@@ -192,15 +156,15 @@
 
 .map-search-clear {
     position: absolute;
-    right: 3.6rem;   /* left of the search button */
+    right: 3.7rem;
     background: none;
     border: none;
     color: var(--text-muted);
     cursor: pointer;
     font-size: 0.85rem;
-    padding: 0.2rem 0.3rem;
     line-height: 1;
-    border-radius: 4px;
+    padding: 0.2rem 0.35rem;
+    border-radius: 6px;
     transition: color 0.15s, background 0.15s;
 }
 
@@ -209,22 +173,21 @@
     background: var(--bg);
 }
 
-/* Search submit button */
 .map-search-btn {
     position: absolute;
     right: 0;
     top: 0;
     bottom: 0;
     width: 3.2rem;
-    background: var(--primary);
     border: none;
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    border-radius: 0 12px 12px 0;
     color: #fff;
-    cursor: pointer;
+    background: var(--primary);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.15s;
+    cursor: pointer;
+    transition: background 0.2s ease;
     pointer-events: auto;
 }
 
@@ -234,30 +197,30 @@
 
 .map-search-results {
     position: absolute;
-    top: calc(100% + 4px);
+    top: calc(100% + 6px);
     left: 0;
     right: 0;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    z-index: 1101;
     list-style: none;
     margin: 0;
-    padding: 0.3rem 0;
-    z-index: 1101;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-    max-height: 280px;
+    padding: 0.35rem 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    max-height: 300px;
     overflow-y: auto;
-    pointer-events: auto; /* re-enable clicks on result items */
+    pointer-events: auto;
 }
 
 .map-search-item {
-    padding: 0.55rem 1rem;
-    cursor: pointer;
+    padding: 0.58rem 0.95rem;
     border-bottom: 1px solid var(--border);
-    transition: background 0.13s;
     display: flex;
     flex-direction: column;
     gap: 0.18rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
 }
 
 .map-search-item:last-child {
@@ -269,16 +232,15 @@
 }
 
 .map-search-item-name {
-    font-size: 0.82rem;
+    font-size: 0.84rem;
     color: var(--text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.4;
 }
 
 .map-search-item-coords {
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     color: var(--text-muted);
     font-variant-numeric: tabular-nums;
 }
@@ -287,14 +249,28 @@
 .map-search-item--empty,
 .map-search-item--error {
     cursor: default;
+    padding: 0.75rem 0.95rem;
     font-size: 0.82rem;
-    color: var(--text-muted);
     font-style: italic;
-    padding: 0.7rem 1rem;
+    color: var(--text-muted);
 }
 
 .map-search-item--error {
     color: var(--danger);
 }
-    color: var(--danger);
+
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 300px;
+    }
+}
+
+@media (max-width: 900px) {
+    .map-container {
+        min-height: 62vh;
+    }
+
+    .map-search-overlay {
+        top: 0.8rem;
+    }
 }

@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Predict – WeatherGIS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/predict.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-layout">
+    <div class="page-header-section">
+        <h2>AI Weather Predict</h2>
+        <p>So sánh kết quả API thời tiết hiện tại và dự đoán AI tại cùng một tọa độ.</p>
+    </div>
+
+    <div class="grid-2">
+        <div class="card">
+            <div class="card-header"><h3>Chọn vị trí</h3></div>
+            <form id="predict-form">
+                <div class="form-group">
+                    <label for="location-select">Vị trí đã lưu</label>
+                    <select id="location-select" class="form-control">
+                        <option value="">-- Chọn vị trí đã lưu --</option>
+                        {% for loc in locations %}
+                        <option value="{{ loc.id }}" data-lat="{{ loc.latitude }}" data-lng="{{ loc.longitude }}">
+                            {{ loc.name|default:"Chưa đặt tên" }} ({{ loc.latitude|floatformat:4 }}, {{ loc.longitude|floatformat:4 }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-divider"><span>HOẶC nhập tọa độ</span></div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="lat-input">Vĩ độ</label>
+                        <input type="number" step="0.0001" id="lat-input" class="form-control" placeholder="21.0285">
+                    </div>
+                    <div class="form-group">
+                        <label for="lng-input">Kinh độ</label>
+                        <input type="number" step="0.0001" id="lng-input" class="form-control" placeholder="105.8542">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="horizon-hours">Khoảng dự đoán AI</label>
+                    <select id="horizon-hours" class="form-control">
+                        <option value="1">+1 giờ</option>
+                        <option value="3" selected>+3 giờ</option>
+                        <option value="6">+6 giờ</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="predict-submit-btn">Phân tích Predict</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h3>Bản đồ vị trí</h3></div>
+            <div id="predict-map" class="mini-map"></div>
+            <div class="selected-location-info" id="selected-info">
+                <p class="text-muted">Chọn một vị trí để bắt đầu.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card is-hidden" id="predict-results">
+        <div class="card-header flex-between">
+            <h3>Kết quả so sánh API vs AI</h3>
+            <span class="result-location" id="result-location"></span>
+        </div>
+
+        <div class="ai-status-panel is-hidden" id="ai-status-panel">
+            <div class="ai-status-title">AI Model Runtime Error</div>
+            <div class="ai-status-message" id="ai-status-message">--</div>
+            <div class="ai-status-error" id="ai-status-error">--</div>
+        </div>
+
+        <div class="kpi-row">
+            <div class="kpi-card">
+                <div class="kpi-label">Prediction Score</div>
+                <div class="kpi-value" id="prediction-score">--</div>
+                <div class="meter">
+                    <div class="meter-fill" id="score-meter-fill"></div>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Confidence</div>
+                <div class="kpi-value" id="confidence-level">--</div>
+                <div class="meter">
+                    <div class="meter-fill" id="confidence-meter-fill"></div>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">AI Model</div>
+                <div class="kpi-value" id="model-name">--</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">AI Runtime</div>
+                <div class="kpi-value"><span class="runtime-badge" id="ai-runtime-badge">--</span></div>
+                <div class="kpi-sub" id="ai-source">--</div>
+            </div>
+        </div>
+
+        <div class="comparison-grid">
+            <div class="compare-card">
+                <h4>API Result</h4>
+                <ul>
+                    <li>Nhiệt độ: <strong id="api-temp">--</strong></li>
+                    <li>Độ ẩm: <strong id="api-humidity">--</strong></li>
+                    <li>Gió: <strong id="api-wind">--</strong></li>
+                    <li>Điều kiện: <strong id="api-description">--</strong></li>
+                </ul>
+            </div>
+            <div class="compare-card">
+                <h4>AI Result</h4>
+                <ul>
+                    <li>Nhiệt độ: <strong id="ai-temp">--</strong></li>
+                    <li>Độ ẩm: <strong id="ai-humidity">--</strong></li>
+                    <li>Gió: <strong id="ai-wind">--</strong></li>
+                    <li>Điều kiện: <strong id="ai-description">--</strong></li>
+                </ul>
+            </div>
+            <div class="compare-card">
+                <h4>Delta (AI - API)</h4>
+                <ul>
+                    <li>Nhiệt độ: <strong id="delta-temp">--</strong></li>
+                    <li>Độ ẩm: <strong id="delta-humidity">--</strong></li>
+                    <li>Gió: <strong id="delta-wind">--</strong></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="predict-chart"></canvas>
+        </div>
+    </div>
+
+    <div class="card" id="empty-state">
+        <div class="empty-state">
+            <p>Chọn tọa độ để xem kết quả API hiện tại và kết quả dự đoán từ mô hình AI.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_data %}
+<script id="initial-data" type="application/json">
+{
+    "locations": {{ locations_json|safe }}
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/pages/predict.js' %}"></script>
+{% endblock %}

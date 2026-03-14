@@ -1,0 +1,8 @@
+# This directory stores runtime model artefacts for Predict AI.
+#
+# The app uses a real pre-trained HuggingFace Chronos model and caches
+# downloaded weights in:
+#   hf_cache/
+#
+# No local training pipeline is used.
+# Cache files are excluded from version control (see .gitignore).

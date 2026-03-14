@@ -27,10 +27,7 @@ def generate_route_weather(start_location, end_location, point_count=5):
     # Get weather for each point
     route_data = []
     for point in points:
-        try:
-            weather = get_current_weather(point['latitude'], point['longitude'])
-        except Exception:
-            weather = get_mock_route_weather(point['latitude'], point['longitude'])
+        weather = get_current_weather(point['latitude'], point['longitude'])
         
         route_data.append({
             'latitude': point['latitude'],
@@ -40,21 +37,3 @@ def generate_route_weather(start_location, end_location, point_count=5):
         })
     
     return route_data
-
-
-def get_mock_route_weather(lat, lng):
-    """
-    Generate mock weather for route point
-    """
-    import random
-    
-    base_temp = 30 - abs(lat - 15) * 0.3
-    
-    conditions = ['Clear sky', 'Few clouds', 'Partly cloudy', 'Scattered clouds']
-    
-    return {
-        'temperature': round(base_temp + random.uniform(-2, 2), 1),
-        'humidity': random.randint(55, 80),
-        'wind_speed': round(random.uniform(1.5, 4), 1),
-        'description': random.choice(conditions)
-    }

@@ -7,7 +7,7 @@
 
 {% block page_actions %}
 <button class="admin-btn admin-btn--primary" id="refresh-health-btn">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px">
+    <svg class="admin-icon-gap" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <polyline points="23 4 23 10 17 10"></polyline>
         <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
     </svg>
@@ -83,7 +83,7 @@
 </div>
 
 <!-- Response detail -->
-<div class="admin-card" id="owm-response-card" style="display:none">
+<div class="admin-card admin-hidden" id="owm-response-card">
     <div class="admin-card-header">
         <h2 class="admin-card-title">Chi tiết phản hồi</h2>
         <button class="admin-btn admin-btn--ghost admin-btn--sm" id="close-response-btn">Đóng</button>

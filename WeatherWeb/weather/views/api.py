@@ -17,10 +17,10 @@ from weather.services.gis_utils import (
     serialize_locations
 )
 from weather.services.weather_service import get_current_weather
-from weather.services.forecast_service import generate_forecast as generate_mock_forecast
-from weather.services.compare_service import compare_locations, get_mock_weather
+from weather.services.compare_service import compare_locations
 from weather.services.route_service import generate_route_weather
 from weather.services.layer_config import get_available_layers, get_layer_by_id
+from weather.services.predict_service import get_prediction_comparison
 from weather.models import UserLocation, Route
 
 
@@ -345,34 +345,28 @@ class LocationDetailAPIView(View):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class ForecastAPIView(View):
-    """
-    Get forecast data
-    """
+class PredictAPIView(View):
+    """Return API weather and AI prediction results for comparison UI."""
+
     def post(self, request):
         try:
             data = json.loads(request.body.decode())
-            mode = data.get('mode', 'hourly')
-            
             lat = data.get('latitude')
             lng = data.get('longitude')
             location_id = data.get('location_id')
-            
+            horizon_hours = int(data.get('horizon_hours', 3))
+
             if location_id and request.user.is_authenticated:
                 location = get_location_by_id(request.user, location_id)
                 if location:
                     lat = location.latitude
                     lng = location.longitude
-            
+
             if lat is None or lng is None:
                 return JsonResponse({'error': 'Yêu cầu tọa độ'}, status=400)
-            
-            forecast = generate_mock_forecast(float(lat), float(lng), mode)
-            
-            return JsonResponse({
-                'forecast': forecast,
-                'location': {'latitude': lat, 'longitude': lng}
-            })
+
+            payload = get_prediction_comparison(float(lat), float(lng), horizon_hours=horizon_hours)
+            return JsonResponse(payload)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
 

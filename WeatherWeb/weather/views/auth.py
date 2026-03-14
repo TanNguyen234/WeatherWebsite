@@ -54,6 +54,12 @@ class LoginView(View):
             next_url = request.GET.get('next', '')
             return redirect(_redirect_after_login(user, next_url))
 
+        existing_user = User.objects.filter(username=username).first()
+        if existing_user and existing_user.check_password(password) and not existing_user.is_active:
+            return render(request, self.template_name, {
+                'error': 'Tài khoản đang bị vô hiệu hóa. Vui lòng liên hệ quản trị viên.'
+            })
+
         return render(request, self.template_name, {
             'error': 'Tên đăng nhập hoặc mật khẩu không đúng'
         })

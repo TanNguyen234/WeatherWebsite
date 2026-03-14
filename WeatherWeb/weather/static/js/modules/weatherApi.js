@@ -128,27 +128,6 @@ const WeatherApi = (function () {
     }
 
     /**
-     * Get forecast data
-     * @param {number} locationId - Location ID
-     * @param {string} mode - 'hourly' or 'daily'
-     * @returns {Promise} Forecast data
-     */
-    async function getForecast(locationId, mode = 'hourly') {
-        return post('/api/forecast/', { location_id: locationId, mode });
-    }
-
-    /**
-     * Get forecast by coordinates
-     * @param {number} lat - Latitude
-     * @param {number} lng - Longitude
-     * @param {string} mode - 'hourly' or 'daily'
-     * @returns {Promise} Forecast data
-     */
-    async function getForecastByCoords(lat, lng, mode = 'hourly') {
-        return post('/api/forecast/', { latitude: lat, longitude: lng, mode });
-    }
-
-    /**
      * Compare multiple locations
      * @param {Array} locationIds - Array of location IDs
      * @returns {Promise} Comparison data
@@ -158,32 +137,12 @@ const WeatherApi = (function () {
     }
 
     /**
-     * Get route weather
-     * @param {number} startId - Start location ID
-     * @param {number} endId - End location ID
-     * @param {number} pointCount - Number of interpolation points
-     * @returns {Promise} Route weather data
+     * Compare current API result and AI prediction
+     * @param {Object} payload - {location_id}|{latitude,longitude} + horizon_hours
+     * @returns {Promise} Prediction comparison payload
      */
-    async function getRouteWeather(startId, endId, pointCount = 5) {
-        return post('/api/route/', { start_id: startId, end_id: endId, point_count: pointCount });
-    }
-
-    /**
-     * Get location groups
-     * @returns {Promise} Groups data
-     */
-    async function getGroups() {
-        return get('/api/groups/');
-    }
-
-    /**
-     * Add location to group
-     * @param {number} groupId - Group ID
-     * @param {number} locationId - Location ID
-     * @returns {Promise} Response
-     */
-    async function addToGroup(groupId, locationId) {
-        return post('/api/groups/add/', { group_id: groupId, location_id: locationId });
+    async function getPredictionComparison(payload) {
+        return post('/api/predict/', payload);
     }
 
     // Public API
@@ -195,11 +154,7 @@ const WeatherApi = (function () {
         getCurrentWeather,
         saveLocation,
         deleteLocation,
-        getForecast,
-        getForecastByCoords,
         compareLocations,
-        getRouteWeather,
-        getGroups,
-        addToGroup
+        getPredictionComparison
     };
 })();

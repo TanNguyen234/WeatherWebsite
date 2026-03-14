@@ -1,6 +1,6 @@
 from django.urls import path
 from weather.views.map import MapView
-from weather.views.forecast import ForecastView
+from weather.views.predict import PredictView
 from weather.views.compare import CompareView
 from weather.views.route import RouteView
 from weather.views.layers import LayersView
@@ -10,10 +10,10 @@ from weather.views.api import (
     WeatherAPIView,
     LocationAPIView,
     LocationDetailAPIView,
-    ForecastAPIView,
     CompareAPIView,
     RouteAPIView,
     RouteCreateAPIView,
+    PredictAPIView,
     LayerConfigAPIView,
     LayerPointDataAPIView,
     GeocodeProxyView,
@@ -23,7 +23,7 @@ from weather.views.api import (
 urlpatterns = [
     # Page views
     path('', MapView.as_view(), name='map'),
-    path('forecast/', ForecastView.as_view(), name='forecast'),
+    path('predict/', PredictView.as_view(), name='predict'),
     path('compare/', CompareView.as_view(), name='compare'),
     path('route/', RouteView.as_view(), name='route'),
     path('layers/', LayersView.as_view(), name='layers'),
@@ -36,9 +36,9 @@ urlpatterns = [
 
     # API endpoints
     path('api/weather/', WeatherAPIView.as_view(), name='api-weather'),
+    path('api/predict/', PredictAPIView.as_view(), name='api-predict'),
     path('api/locations/', LocationAPIView.as_view(), name='api-locations'),
     path('api/locations/<int:location_id>/', LocationDetailAPIView.as_view(), name='api-location-detail'),
-    path('api/forecast/', ForecastAPIView.as_view(), name='api-forecast'),
     path('api/compare/', CompareAPIView.as_view(), name='api-compare'),
     path('api/route/', RouteAPIView.as_view(), name='api-route'),
     path('api/routes/', RouteCreateAPIView.as_view(), name='api-routes'),
