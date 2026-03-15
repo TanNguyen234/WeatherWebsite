@@ -431,7 +431,7 @@
             if (!cfg) return;
             html += '<span class="layer-chip" data-layer="' + id + '" title="Nhấn để tắt lớp">' +
                 '<span class="chip-dot" style="background:linear-gradient(135deg,' + cfg.colors[0] + ',' + cfg.colors[2] + ')"></span>' +
-                cfg.icon + ' ' + cfg.name +
+                cfg.name +
             '</span>';
         });
         container.innerHTML = html;
@@ -468,9 +468,8 @@
             var ticks = (cfg.legend_labels || []).join('</span><span>');
             html += '<div class="legend-row">' +
                 '<div class="legend-row-header">' +
-                    '<span>' + cfg.icon + '</span>' +
-                    '<span>' + cfg.name + '</span>' +
-                    '<small style="color:var(--text-muted);margin-left:auto">' + cfg.unit + '</small>' +
+                    '<span class="legend-row-title">' + cfg.name + '</span>' +
+                    '<small class="legend-row-unit">' + cfg.unit + '</small>' +
                 '</div>' +
                 '<div class="legend-row-gradient" style="background:linear-gradient(to right,' +
                     cfg.colors[0] + ',' + cfg.colors[1] + ',' + cfg.colors[2] + ')"></div>' +

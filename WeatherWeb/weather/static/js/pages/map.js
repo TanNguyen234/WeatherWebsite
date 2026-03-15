@@ -523,12 +523,12 @@
         var displayName = shortName.length > 80 ? shortName.substring(0, 77) + '…' : shortName;
 
         var popupContent = '<div class="gis-popup search-result-popup">'
-            + '<div class="popup-header">📍 ' + displayName.replace(/</g, '&lt;') + '</div>'
+            + '<div class="popup-header">' + displayName.replace(/</g, '&lt;') + '</div>'
             + '<div class="popup-coords">' + UIHelpers.formatCoords(lat, lng) + '</div>'
             + '<div class="popup-actions">'
-            + '<button class="btn-popup" data-action="load-weather-search" data-lat="' + lat + '" data-lng="' + lng + '">🌤 Xem thời tiết</button>'
+            + '<button class="btn-popup" data-action="load-weather-search" data-lat="' + lat + '" data-lng="' + lng + '"> Xem thời tiết</button>'
             + (state.isAuthenticated
-                ? '<button class="btn-popup btn-outline" data-action="save" data-lat="' + lat + '" data-lng="' + lng + '">💾 Lưu vị trí</button>'
+                ? '<button class="btn-popup btn-outline" data-action="save" data-lat="' + lat + '" data-lng="' + lng + '"> Lưu vị trí</button>'
                 : '')
             + '</div>'
             + '</div>';
@@ -561,7 +561,7 @@
         if (isNaN(lat) || isNaN(lng)) return;
 
         btn.disabled = true;
-        btn.textContent = '⏳ Đang tải…';
+        btn.textContent = ' Đang tải…';
 
         WeatherApi.getCurrentWeather(lat, lng)
             .then(function (weather) {
@@ -576,7 +576,7 @@
                 }
             })
             .catch(function (err) {
-                if (btn) { btn.disabled = false; btn.textContent = '🌤 Xem thời tiết'; }
+                if (btn) { btn.disabled = false; btn.textContent = ' Xem thời tiết'; }
                 UIHelpers.showToast('Không lấy được thời tiết: ' + err.message, 'error');
             });
     });

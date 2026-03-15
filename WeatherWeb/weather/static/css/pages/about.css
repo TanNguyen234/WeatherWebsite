@@ -217,6 +217,10 @@
     margin-top: 1rem;
 }
 
+.principle-box--compact-top {
+    margin-top: 0.75rem;
+}
+
 /* Schema Diagram */
 .schema-diagram {
     display: grid;
