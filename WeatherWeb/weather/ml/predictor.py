@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +20,8 @@ import requests
 MODEL_ID = "amazon/chronos-t5-tiny"
 MODEL_CACHE_DIR = Path(__file__).resolve().parent / "saved_models" / "hf_cache"
 OPEN_METEO_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -58,12 +61,16 @@ def _get_pipeline():
     torch = _get_torch()
     dtype = torch.float32
 
-    _PIPELINE = ChronosPipeline.from_pretrained(
-        MODEL_ID,
-        cache_dir=str(MODEL_CACHE_DIR),
-        torch_dtype=dtype,
-        device_map="cpu",
-    )
+    try:
+        _PIPELINE = ChronosPipeline.from_pretrained(
+            MODEL_ID,
+            cache_dir=str(MODEL_CACHE_DIR),
+            torch_dtype=dtype,
+            device_map="cpu",
+        )
+    except Exception as exc:
+        logger.exception("Khong the tai local model '%s'", MODEL_ID)
+        raise ModelInferenceError(f"Không thể tải local model '{MODEL_ID}': {exc}") from exc
     return _PIPELINE
 
 
@@ -92,9 +99,16 @@ def _fetch_open_meteo_history(lat: float, lng: float, days: int = 10) -> dict[st
         "timezone": "UTC",
     }
 
-    resp = requests.get(OPEN_METEO_ARCHIVE_URL, params=params, timeout=20)
-    resp.raise_for_status()
-    payload = resp.json()
+    try:
+        resp = requests.get(OPEN_METEO_ARCHIVE_URL, params=params, timeout=20)
+        resp.raise_for_status()
+        payload = resp.json()
+    except requests.RequestException as exc:
+        logger.exception("Loi goi Open-Meteo lat=%s lng=%s", lat, lng)
+        raise ModelInferenceError(f"Lỗi gọi Open-Meteo: {exc}") from exc
+    except ValueError as exc:
+        logger.exception("Open-Meteo tra ve JSON khong hop le lat=%s lng=%s", lat, lng)
+        raise ModelInferenceError(f"Open-Meteo trả về dữ liệu không hợp lệ: {exc}") from exc
     hourly = payload.get("hourly", {})
 
     temp = [float(x) for x in hourly.get("temperature_2m", []) if x is not None]
@@ -158,8 +172,20 @@ def predict_weather(lat: float, lng: float, current_weather: dict, horizon_hours
         humidity_stats = _forecast_series(history["humidity"], horizon_hours)
         wind_stats = _forecast_series(history["wind_speed"], horizon_hours)
     except ModelInferenceError:
+        logger.exception(
+            "Local model inference error lat=%s lng=%s horizon_hours=%s",
+            lat,
+            lng,
+            horizon_hours,
+        )
         raise
     except Exception as exc:
+        logger.exception(
+            "Unexpected local model inference error lat=%s lng=%s horizon_hours=%s",
+            lat,
+            lng,
+            horizon_hours,
+        )
         raise ModelInferenceError(f"Local model inference failed: {exc}") from exc
 
     temperature = round(_clamp(temp_stats.value, -30.0, 55.0), 1)
