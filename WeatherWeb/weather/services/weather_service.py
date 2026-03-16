@@ -4,10 +4,12 @@ Weather data is fetched on demand, never stored.
 """
 import os
 import math
+from datetime import datetime, timedelta
 import requests
 
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY", "")
 OPENWEATHER_CURRENT_URL = "https://api.openweathermap.org/data/2.5/weather"
+OPEN_METEO_FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 
 
 # ---------------------------------------------------------------------------
@@ -32,6 +34,21 @@ def get_current_weather(lat: float, lng: float) -> dict:
             pass
 
     return _approximate_current_weather(lat, lng)
+
+
+def get_hourly_weather_forecast(lat: float, lng: float, hours: int = 12) -> list[dict]:
+    """Return hourly weather forecast for the next N hours.
+
+    Uses Open-Meteo (no key required) and falls back to deterministic projection.
+    """
+    if hours < 1 or hours > 48:
+        raise ValueError("hours phải nằm trong khoảng [1, 48]")
+
+    try:
+        return _fetch_hourly_from_open_meteo(lat, lng, hours)
+    except Exception:
+        current = get_current_weather(lat, lng)
+        return _project_hourly_from_current(current, hours)
 
 
 # ---------------------------------------------------------------------------
@@ -68,6 +85,115 @@ def _fetch_current_from_api(lat: float, lng: float) -> dict:
         "rain_1h":       d.get("rain", {}).get("1h", 0),
         "source":        "openweathermap",
     }
+
+
+def _description_from_open_meteo_code(code: int) -> str:
+    mapping = {
+        0: "Trời quang",
+        1: "Ít mây",
+        2: "Mây rải rác",
+        3: "Nhiều mây",
+        45: "Sương mù",
+        48: "Sương mù đóng băng",
+        51: "Mưa phùn nhẹ",
+        53: "Mưa phùn vừa",
+        55: "Mưa phùn nặng hạt",
+        61: "Mưa nhẹ",
+        63: "Mưa vừa",
+        65: "Mưa to",
+        71: "Tuyết nhẹ",
+        73: "Tuyết vừa",
+        75: "Tuyết dày",
+        80: "Mưa rào nhẹ",
+        81: "Mưa rào vừa",
+        82: "Mưa rào mạnh",
+        95: "Giông",
+    }
+    return mapping.get(code, "Biến đổi")
+
+
+def _fetch_hourly_from_open_meteo(lat: float, lng: float, hours: int) -> list[dict]:
+    params = {
+        "latitude": lat,
+        "longitude": lng,
+        "hourly": "temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code",
+        "timezone": "auto",
+        "forecast_days": 3,
+    }
+    resp = requests.get(OPEN_METEO_FORECAST_URL, params=params, timeout=10)
+    resp.raise_for_status()
+    payload = resp.json()
+
+    hourly = payload.get("hourly", {})
+    timestamps = hourly.get("time", [])
+    temperatures = hourly.get("temperature_2m", [])
+    humidities = hourly.get("relative_humidity_2m", [])
+    winds = hourly.get("wind_speed_10m", [])
+    codes = hourly.get("weather_code", [])
+
+    if not timestamps or not temperatures or not humidities or not winds:
+        raise ValueError("Open-Meteo thiếu dữ liệu dự báo theo giờ")
+
+    now_local = datetime.now()
+    output = []
+    for idx, ts in enumerate(timestamps):
+        try:
+            dt = datetime.fromisoformat(ts)
+        except ValueError:
+            continue
+
+        if dt < now_local:
+            continue
+
+        output.append(
+            {
+                "hour_offset": len(output) + 1,
+                "timestamp": ts,
+                "temperature": round(float(temperatures[idx]), 1),
+                "humidity": int(round(float(humidities[idx]), 0)),
+                "wind_speed": round(float(winds[idx]), 1),
+                "description": _description_from_open_meteo_code(int(codes[idx])) if idx < len(codes) else "Biến đổi",
+                "source": "open-meteo-hourly",
+            }
+        )
+
+        if len(output) >= hours:
+            break
+
+    if len(output) < hours:
+        raise ValueError("Không đủ dữ liệu dự báo theo giờ từ Open-Meteo")
+
+    return output
+
+
+def _project_hourly_from_current(current: dict, hours: int) -> list[dict]:
+    """Deterministic fallback projection when hourly API is unavailable."""
+    temp0 = float(current.get("temperature", 27.0))
+    humidity0 = float(current.get("humidity", 70.0))
+    wind0 = float(current.get("wind_speed", 3.5))
+
+    series = []
+    now = datetime.now().replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+    for h in range(1, hours + 1):
+        cycle = math.sin((h / 24.0) * math.pi * 2)
+        temperature = round(temp0 + cycle * 1.2 - (h * 0.03), 1)
+        humidity = int(round(max(20, min(100, humidity0 - cycle * 3.5 + h * 0.1)), 0))
+        wind_speed = round(max(0.0, wind0 + abs(cycle) * 0.8 - h * 0.02), 1)
+
+        series.append(
+            {
+                "hour_offset": h,
+                "timestamp": (now.replace(minute=0, second=0, microsecond=0)).isoformat(),
+                "temperature": temperature,
+                "humidity": humidity,
+                "wind_speed": wind_speed,
+                "description": current.get("description", "Biến đổi"),
+                "source": "hourly-projection",
+            }
+        )
+        now += timedelta(hours=1)
+
+    return series
 
 
 # ---------------------------------------------------------------------------

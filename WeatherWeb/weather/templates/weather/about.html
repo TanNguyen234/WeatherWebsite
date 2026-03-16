@@ -64,8 +64,8 @@
 
                 <div class="api-card">
                     <div class="api-badge api-badge--free">Miễn phí · Không cần API key</div>
-                    <h4>📍 Nominatim (OpenStreetMap)</h4>
-                    <p class="api-purpose">Geocoding / Reverse Geocoding</p>
+                    <h4>Nominatim (OpenStreetMap)</h4>
+                    <p class="api-purpose">Geocoding và reverse geocoding</p>
                     <ul>
                         <li>
                             <strong>Tìm địa điểm theo tên:</strong><br>
@@ -85,8 +85,8 @@
 
                 <div class="api-card">
                     <div class="api-badge api-badge--free">Miễn phí · Không cần API key</div>
-                    <h4>🗺 OSRM (Open Source Routing Machine)</h4>
-                    <p class="api-purpose">Road Routing Engine</p>
+                    <h4>OSRM (Open Source Routing Machine)</h4>
+                    <p class="api-purpose">Bộ máy định tuyến đường bộ</p>
                     <ul>
                         <li>
                             <strong>Routing 2 điểm:</strong><br>
@@ -107,7 +107,7 @@
 
                 <div class="api-card">
                     <div class="api-badge api-badge--key">Cần API key</div>
-                    <h4>🌤 OpenWeatherMap</h4>
+                    <h4>OpenWeatherMap</h4>
                     <p class="api-purpose">Dữ liệu thời tiết thực tế</p>
                     <ul>
                         <li>Nhiệt độ, độ ẩm, tốc độ gió</li>
@@ -120,11 +120,134 @@
         </div>
     </section>
 
-    <!-- Country-Aware Routing -->
     <section class="about-section">
         <div class="card highlight-card">
             <div class="card-header">
-                <h3>Country-Aware Routing – Định tuyến nội địa</h3>
+                <h3>Dự đoán theo chuỗi giờ trên trang Predict</h3>
+            </div>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Chọn điểm phân tích</h4>
+                        <p>Người dùng chọn vị trí đã lưu hoặc click trực tiếp trên bản đồ.</p>
+                    </div>
+                </div>
+                <div class="flow-connector">→</div>
+                <div class="flow-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Chọn khoảng giờ</h4>
+                        <p>Hệ thống hỗ trợ cửa sổ dự đoán 6 giờ, 12 giờ hoặc 24 giờ.</p>
+                    </div>
+                </div>
+                <div class="flow-connector">→</div>
+                <div class="flow-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Ghép API và AI</h4>
+                        <p>Backend trả chuỗi API theo giờ và chuỗi AI theo giờ để so sánh cùng trục thời gian.</p>
+                    </div>
+                </div>
+                <div class="flow-connector">→</div>
+                <div class="flow-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>Biểu đồ 2 đường</h4>
+                        <p>Mỗi feature có 2 đường: một đường API và một đường AI để theo dõi xu hướng.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="principle-box">
+                <strong>Nguyên tắc hiển thị:</strong> tập trung vào chuỗi thời gian và độ ổn định của xu hướng,
+                không hiển thị khối chênh lệch rời rạc gây nhiễu.
+            </div>
+        </div>
+    </section>
+
+    <section class="about-section">
+        <div class="card">
+            <div class="card-header">
+                <h3>Công nghệ AI sử dụng</h3>
+            </div>
+            <div class="schema-diagram">
+                <div class="table-box">
+                    <h4>Chronos (Time-series Foundation Model)</h4>
+                    <ul>
+                        <li>Mô hình: <code>amazon/chronos-t5-tiny</code></li>
+                        <li>Vai trò: Dự đoán chuỗi thời gian theo giờ cho nhiệt độ, độ ẩm, gió</li>
+                        <li>Kiểu triển khai: Suy luận cục bộ trên backend</li>
+                    </ul>
+                </div>
+                <div class="table-box">
+                    <h4>PyTorch</h4>
+                    <ul>
+                        <li>Thư viện runtime cho suy luận mô hình</li>
+                        <li>Chạy trên CPU để đảm bảo tương thích môi trường</li>
+                        <li>Không yêu cầu huấn luyện lại trong ứng dụng</li>
+                    </ul>
+                </div>
+                <div class="table-box">
+                    <h4>Open-Meteo Archive</h4>
+                    <ul>
+                        <li>Cung cấp lịch sử theo giờ làm ngữ cảnh cho AI</li>
+                        <li>Dùng dữ liệu lịch sử để tạo chuỗi dự đoán tương lai</li>
+                        <li>Không lưu dữ liệu lịch sử vào cơ sở dữ liệu nội bộ</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-section">
+        <div class="card">
+            <div class="card-header">
+                <h3>Cách sử dụng tính năng AI trên trang Predict</h3>
+            </div>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Chọn vị trí</h4>
+                        <p>Chọn vị trí đã lưu hoặc click trực tiếp trên bản đồ.</p>
+                    </div>
+                </div>
+                <div class="flow-connector">→</div>
+                <div class="flow-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Chọn khoảng giờ</h4>
+                        <p>Chọn 6 giờ, 12 giờ hoặc 24 giờ để xác định độ dài chuỗi dự đoán.</p>
+                    </div>
+                </div>
+                <div class="flow-connector">→</div>
+                <div class="flow-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Phân tích</h4>
+                        <p>Nhấn nút phân tích để backend trả về chuỗi API và chuỗi AI cùng trục giờ.</p>
+                    </div>
+                </div>
+                <div class="flow-connector">→</div>
+                <div class="flow-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>Đọc biểu đồ đường</h4>
+                        <p>Chọn feature cần xem. Biểu đồ sẽ hiển thị hai đường: API và AI.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="principle-box principle-box--compact-top">
+                Khuyến nghị vận hành: so sánh xu hướng biến động theo giờ giữa hai đường thay vì đánh giá theo một điểm đơn lẻ.
+            </div>
+        </div>
+    </section>
+
+    <!-- Định tuyến theo quốc gia -->
+    <section class="about-section">
+        <div class="card highlight-card">
+            <div class="card-header">
+                <h3>Định tuyến theo quốc gia - Đảm bảo đi nội địa</h3>
             </div>
             <div class="flow-diagram">
                 <div class="flow-step">
@@ -169,7 +292,7 @@
         </div>
     </section>
 
-    <!-- Data Flow -->
+    <!-- Luồng dữ liệu -->
     <section class="about-section">
         <div class="card">
             <div class="card-header">
@@ -216,7 +339,7 @@
         </div>
     </section>
 
-    <!-- Spatial vs Temporal -->
+    <!-- Không gian và thời gian -->
     <section class="about-section">
         <div class="grid-2">
             <div class="card">
@@ -266,7 +389,7 @@
         </div>
     </section>
 
-    <!-- Why No Weather Storage -->
+    <!-- Lý do không lưu dữ liệu thời tiết -->
     <section class="about-section">
         <div class="card highlight-card">
             <div class="card-header">
@@ -300,11 +423,11 @@
         </div>
     </section>
 
-    <!-- Database Schema -->
+    <!-- Lược đồ cơ sở dữ liệu -->
     <section class="about-section">
         <div class="card">
             <div class="card-header">
-                <h3>Database Schema (PostGIS-Ready)</h3>
+                <h3>Lược đồ cơ sở dữ liệu (sẵn sàng cho PostGIS)</h3>
             </div>
             <div class="schema-diagram">
                 <div class="table-box">
@@ -343,7 +466,7 @@
         </div>
     </section>
 
-    <!-- Tech Stack -->
+    <!-- Công nghệ -->
     <section class="about-section">
         <div class="card">
             <div class="card-header">
@@ -353,12 +476,12 @@
                 <div class="tech-item">
                     <span class="tech-icon">Django</span>
                     <h4>Django 4.x</h4>
-                    <p>Backend Framework (MTV)</p>
+                    <p>Framework backend theo MTV</p>
                 </div>
                 <div class="tech-item">
                     <span class="tech-icon">PostgreSQL</span>
                     <h4>PostgreSQL</h4>
-                    <p>Database (PostGIS ready)</p>
+                    <p>Cơ sở dữ liệu (sẵn sàng PostGIS)</p>
                 </div>
                 <div class="tech-item">
                     <span class="tech-icon">Leaflet</span>
@@ -373,7 +496,7 @@
                 <div class="tech-item">
                     <span class="tech-icon">OSRM</span>
                     <h4>OSRM</h4>
-                    <p>Road Routing Engine</p>
+                    <p>Bộ máy định tuyến đường bộ</p>
                 </div>
                 <div class="tech-item">
                     <span class="tech-icon">OWM</span>
