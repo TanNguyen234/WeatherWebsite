@@ -5,7 +5,11 @@
         map: null,
         marker: null,
         chart: null,
-        locations: []
+        locations: [],
+        selectedPoint: null,
+        activeMetric: 'temperature',
+        lastApiHourly: [],
+        lastAiSeries: []
     };
 
     function init() {
@@ -19,10 +23,8 @@
         });
 
         MapCore.setupMapClick(state.map, (lat, lng) => {
-            document.getElementById('lat-input').value = lat.toFixed(4);
-            document.getElementById('lng-input').value = lng.toFixed(4);
             document.getElementById('location-select').value = '';
-            setSelection(lat, lng, null);
+            setSelection(lat, lng, 'Điểm chọn trên bản đồ');
         });
 
         bindEvents();
@@ -31,6 +33,15 @@
     function bindEvents() {
         document.getElementById('location-select').addEventListener('change', onLocationChange);
         document.getElementById('predict-form').addEventListener('submit', onSubmit);
+        document.getElementById('chart-metric').addEventListener('change', onMetricChange);
+    }
+
+    function onMetricChange(e) {
+        state.activeMetric = e.target.value;
+        if (!state.lastApiHourly || state.lastApiHourly.length === 0) {
+            return;
+        }
+        renderChart(state.lastApiHourly, state.lastAiSeries);
     }
 
     function onLocationChange(e) {
@@ -42,12 +53,16 @@
         const lat = parseFloat(option.dataset.lat);
         const lng = parseFloat(option.dataset.lng);
         const name = option.textContent.split('(')[0].trim();
-        document.getElementById('lat-input').value = '';
-        document.getElementById('lng-input').value = '';
         setSelection(lat, lng, name);
     }
 
     function setSelection(lat, lng, name) {
+        state.selectedPoint = {
+            latitude: lat,
+            longitude: lng,
+            name: name || 'Vị trí tùy chỉnh'
+        };
+
         if (state.marker) {
             state.map.removeLayer(state.marker);
         }
@@ -55,7 +70,7 @@
         state.map.setView([lat, lng], 10);
 
         document.getElementById('selected-info').innerHTML = `
-            <p><strong>${name || 'Vị trí tùy chỉnh'}</strong></p>
+            <p><strong>${state.selectedPoint.name}</strong></p>
             <p>${UIHelpers.formatCoords(lat, lng)}</p>
         `;
     }
@@ -68,32 +83,35 @@
         const submitBtn = document.getElementById('predict-submit-btn');
 
         let payload = { horizon_hours: horizonHours };
-        let lat;
-        let lng;
+        let lat = null;
+        let lng = null;
+        let selectionName = null;
 
         if (selectEl.value) {
             payload.location_id = parseInt(selectEl.value, 10);
             const option = selectEl.options[selectEl.selectedIndex];
             lat = parseFloat(option.dataset.lat);
             lng = parseFloat(option.dataset.lng);
+            selectionName = option.textContent.split('(')[0].trim();
         } else {
-            lat = parseFloat(document.getElementById('lat-input').value);
-            lng = parseFloat(document.getElementById('lng-input').value);
-            if (isNaN(lat) || isNaN(lng)) {
-                UIHelpers.showToast('Vui lòng chọn vị trí hoặc nhập tọa độ hợp lệ', 'error');
+            if (!state.selectedPoint) {
+                UIHelpers.showToast('Vui lòng chọn vị trí đã lưu hoặc click lên bản đồ', 'error');
                 return;
             }
+            lat = state.selectedPoint.latitude;
+            lng = state.selectedPoint.longitude;
+            selectionName = state.selectedPoint.name;
             payload.latitude = lat;
             payload.longitude = lng;
         }
 
-        setSelection(lat, lng, null);
+        setSelection(lat, lng, selectionName);
 
         try {
             if (submitBtn) {
                 submitBtn.disabled = true;
                 submitBtn.classList.add('is-loading');
-                submitBtn.textContent = 'Đang phân tích...';
+                submitBtn.textContent = 'Đang xử lý dự đoán...';
             }
 
             const result = await WeatherApi.getPredictionComparison(payload);
@@ -108,7 +126,7 @@
             if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.classList.remove('is-loading');
-                submitBtn.textContent = 'Phân tích Predict';
+                submitBtn.textContent = 'Phân tích dự đoán';
             }
         }
     }
@@ -132,7 +150,10 @@
                 ai = null;
             }
         }
-        const cmp = result.comparison;
+        const apiHourly = result.api_hourly || [];
+        const aiSeries = ai && Array.isArray(ai.series) ? ai.series : [];
+        state.lastApiHourly = apiHourly;
+        state.lastAiSeries = aiSeries;
 
         document.getElementById('api-temp').textContent = UIHelpers.formatTemp(api.temperature);
         document.getElementById('api-humidity').textContent = UIHelpers.formatHumidity(api.humidity);
@@ -150,35 +171,24 @@
             document.getElementById('ai-wind').textContent = UIHelpers.formatWind(ai.wind_speed);
             document.getElementById('ai-description').textContent = ai.description;
 
-            setDeltaValue('delta-temp', cmp.temperature_delta, '°C');
-            setDeltaValue('delta-humidity', cmp.humidity_delta, '%');
-            setDeltaValue('delta-wind', cmp.wind_speed_delta, ' m/s');
-
             updateAiRuntime(ai.source, false);
             updateMeters(ai.prediction_score, confidencePercent);
             updateAiStatusPanel(aiStatus, false);
-            renderChart(api, ai);
+            renderChart(apiHourly, aiSeries);
         } else {
             document.getElementById('prediction-score').textContent = '--';
             document.getElementById('confidence-level').textContent = '--';
-            document.getElementById('model-name').textContent = 'Local model unavailable';
+            document.getElementById('model-name').textContent = 'Model cục bộ không khả dụng';
 
             document.getElementById('ai-temp').textContent = '--';
             document.getElementById('ai-humidity').textContent = '--';
             document.getElementById('ai-wind').textContent = '--';
             document.getElementById('ai-description').textContent = '--';
 
-            document.getElementById('delta-temp').textContent = '--';
-            document.getElementById('delta-humidity').textContent = '--';
-            document.getElementById('delta-wind').textContent = '--';
-            clearDeltaState('delta-temp');
-            clearDeltaState('delta-humidity');
-            clearDeltaState('delta-wind');
-
             updateAiRuntime('model-error', true);
             updateMeters(0, 0);
             updateAiStatusPanel(aiStatus, true);
-            renderChart(api, null);
+            renderChart(apiHourly, []);
         }
 
         if (state.marker) {
@@ -213,6 +223,10 @@
             }
         }
 
+        if (!Array.isArray(ai.series) || ai.series.length === 0) {
+            throw new Error('AI output không hợp lệ: thiếu chuỗi dự đoán theo giờ');
+        }
+
         return ai;
     }
 
@@ -227,44 +241,6 @@
         confidenceFill.style.width = `${Math.max(0, Math.min(100, Number(confidencePercent) || 0))}%`;
     }
 
-    function setDeltaValue(elementId, value, unit) {
-        const el = document.getElementById(elementId);
-        if (!el) {
-            return;
-        }
-
-        const numeric = Number(value);
-        if (!Number.isFinite(numeric)) {
-            el.textContent = '--';
-            clearDeltaState(elementId);
-            return;
-        }
-
-        const sign = numeric > 0 ? '+' : '';
-        el.textContent = `${sign}${numeric}${unit}`;
-        el.classList.remove('delta-positive', 'delta-negative', 'delta-neutral');
-
-        if (numeric > 0) {
-            el.classList.add('delta-positive');
-            return;
-        }
-
-        if (numeric < 0) {
-            el.classList.add('delta-negative');
-            return;
-        }
-
-        el.classList.add('delta-neutral');
-    }
-
-    function clearDeltaState(elementId) {
-        const el = document.getElementById(elementId);
-        if (!el) {
-            return;
-        }
-        el.classList.remove('delta-positive', 'delta-negative', 'delta-neutral');
-    }
-
     function updateAiRuntime(source, isError) {
         const badge = document.getElementById('ai-runtime-badge');
         const sourceEl = document.getElementById('ai-source');
@@ -275,17 +251,17 @@
 
         badge.classList.remove('local', 'external', 'error');
         if (isError) {
-            badge.textContent = 'MODEL ERROR';
+            badge.textContent = 'LỖI MODEL';
             badge.classList.add('error');
             sourceEl.textContent = 'Không có dữ liệu AI từ local model';
             return;
         }
 
         if (isLocal) {
-            badge.textContent = 'LOCAL AI';
+            badge.textContent = 'AI CỤC BỘ';
             badge.classList.add('local');
         } else {
-            badge.textContent = 'EXTERNAL MODEL';
+            badge.textContent = 'MODEL NGOÀI';
             badge.classList.add('external');
         }
 
@@ -310,43 +286,76 @@
         err.textContent = aiStatus.error || 'Unknown model runtime error';
     }
 
-    function renderChart(api, ai) {
+    function renderChart(apiHourly, aiSeries) {
         const ctx = document.getElementById('predict-chart').getContext('2d');
         if (state.chart) {
             state.chart.destroy();
         }
 
+        if (!Array.isArray(apiHourly) || apiHourly.length === 0) {
+            state.chart = null;
+            return;
+        }
+
+        const metricConfig = {
+            temperature: {
+                key: 'temperature',
+                label: 'Nhiệt độ',
+                unit: '°C',
+                min: null,
+                max: null,
+            },
+            humidity: {
+                key: 'humidity',
+                label: 'Độ ẩm',
+                unit: '%',
+                min: 0,
+                max: 100,
+            },
+            wind_speed: {
+                key: 'wind_speed',
+                label: 'Tốc độ gió',
+                unit: 'm/s',
+                min: 0,
+                max: null,
+            }
+        };
+        const selected = metricConfig[state.activeMetric] || metricConfig.temperature;
+
+        const labels = apiHourly.map((item) => formatHourLabel(item.timestamp, item.hour_offset));
+        const apiData = apiHourly.map((item) => Number(item[selected.key]));
+
         const datasets = [
             {
-                label: 'API',
-                data: [api.temperature, api.humidity, api.wind_speed],
-                backgroundColor: 'rgba(37, 99, 235, 0.8)'
-            }
+                label: `API ${selected.label} (${selected.unit})`,
+                data: apiData,
+                borderColor: 'rgba(37, 99, 235, 1)',
+                backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                tension: 0.35,
+                borderWidth: 2,
+                pointRadius: 2
+            },
         ];
 
-        if (ai) {
+        if (aiSeries.length > 0) {
             datasets.push(
                 {
-                    label: 'AI',
-                    data: [ai.temperature, ai.humidity, ai.wind_speed],
-                    backgroundColor: 'rgba(16, 185, 129, 0.8)'
-                },
-                {
-                    label: 'Delta (AI-API)',
-                    data: [
-                        ai.temperature - api.temperature,
-                        ai.humidity - api.humidity,
-                        ai.wind_speed - api.wind_speed
-                    ],
-                    backgroundColor: 'rgba(245, 158, 11, 0.85)'
+                    label: `AI ${selected.label} (${selected.unit})`,
+                    data: aiSeries.map((item) => Number(item[selected.key])),
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    tension: 0.35,
+                    borderWidth: 2,
+                    borderDash: [5, 4],
+                    pointRadius: 2
                 }
             );
         }
 
         state.chart = new Chart(ctx, {
-            type: 'bar',
+            type: 'line',
             data: {
-                labels: ['Nhiệt độ', 'Độ ẩm', 'Gió'],
+                labels,
                 datasets
             },
             options: {
@@ -368,12 +377,23 @@
                 },
                 scales: {
                     y: {
-                        beginAtZero: true,
+                        type: 'linear',
+                        beginAtZero: selected.min === 0,
+                        min: selected.min,
+                        max: selected.max,
+                        title: {
+                            display: true,
+                            text: `${selected.label} (${selected.unit})`
+                        },
                         grid: {
                             color: 'rgba(148, 163, 184, 0.22)'
                         }
                     },
                     x: {
+                        title: {
+                            display: true,
+                            text: 'Mốc thời gian theo giờ đã chọn'
+                        },
                         grid: {
                             display: false
                         }
@@ -381,6 +401,20 @@
                 }
             }
         });
+    }
+
+    function formatHourLabel(timestamp, hourOffset) {
+        if (!timestamp) {
+            return `+${hourOffset}h`;
+        }
+
+        const date = new Date(timestamp);
+        if (Number.isNaN(date.getTime())) {
+            return `+${hourOffset}h`;
+        }
+        const hour = `${date.getHours()}`.padStart(2, '0');
+        const minute = `${date.getMinutes()}`.padStart(2, '0');
+        return `${hour}:${minute}`;
     }
 
     document.addEventListener('DOMContentLoaded', init);
