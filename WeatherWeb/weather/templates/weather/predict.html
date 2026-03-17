@@ -10,8 +10,8 @@
 {% block content %}
 <div class="page-layout">
     <div class="page-header-section">
-        <h2>AI Weather Predict</h2>
-        <p>So sánh kết quả API thời tiết hiện tại và dự đoán AI tại cùng một tọa độ.</p>
+        <h2>AI Dự báo thời tiết</h2>
+        <p>So sánh kết quả API thời tiết hiện tại và dự báo của AI tại cùng một tọa độ.</p>
     </div>
 
     <div class="grid-2">
@@ -44,7 +44,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="horizon-hours">Khoảng dự đoán AI</label>
+                    <label for="horizon-hours">Khoảng dự báo AI</label>
                     <select id="horizon-hours" class="form-control">
                         <option value="1">+1 giờ</option>
                         <option value="3" selected>+3 giờ</option>
@@ -52,7 +52,7 @@
                     </select>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-block" id="predict-submit-btn">Phân tích Predict</button>
+                <button type="submit" class="btn btn-primary btn-block" id="predict-submit-btn">Phân tích Dự báo</button>
             </form>
         </div>
 
@@ -139,7 +139,7 @@
 
     <div class="card" id="empty-state">
         <div class="empty-state">
-            <p>Chọn tọa độ để xem kết quả API hiện tại và kết quả dự đoán từ mô hình AI.</p>
+            <p>Chọn tọa độ để xem kết quả API hiện tại và kết quả dự báo từ mô hình AI.</p>
         </div>
     </div>
 </div>

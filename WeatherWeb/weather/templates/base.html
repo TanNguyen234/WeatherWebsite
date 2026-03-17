@@ -24,7 +24,7 @@
         <nav>
             <ul class="nav-menu">
                 <li><a href="{% url 'map' %}" class="{% if request.resolver_match.url_name == 'map' %}active{% endif %}">Bản đồ</a></li>
-                <li><a href="{% url 'predict' %}" class="{% if request.resolver_match.url_name == 'predict' %}active{% endif %}">Predict</a></li>
+                <li><a href="{% url 'predict' %}" class="{% if request.resolver_match.url_name == 'predict' %}active{% endif %}">Dự báo</a></li>
                 <li><a href="{% url 'compare' %}" class="{% if request.resolver_match.url_name == 'compare' %}active{% endif %}">So sánh</a></li>
                 <li><a href="{% url 'route' %}" class="{% if request.resolver_match.url_name == 'route' %}active{% endif %}">Tuyến đường</a></li>
                 <li><a href="{% url 'layers' %}" class="{% if request.resolver_match.url_name == 'layers' %}active{% endif %}">Lớp bản đồ</a></li>

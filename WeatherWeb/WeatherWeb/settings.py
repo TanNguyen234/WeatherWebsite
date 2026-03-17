@@ -22,7 +22,7 @@ if os.name == 'nt':
     
     # Nếu không tìm thấy biến VIRTUAL_ENV, ta dùng đường dẫn tuyệt đối bạn đã cung cấp
     if not VENV_BASE:
-        OSGEO_PATH = os.environ.get('OSGEO_PATH', r'D:\Projects\WeatherApp\venv\Lib\site-packages\osgeo')
+        OSGEO_PATH = os.environ.get('OSGEO_PATH', r'D:\Project\WeatherWebsite\venv\Lib\site-packages\osgeo')
     else:
         OSGEO_PATH = os.path.join(VENV_BASE, 'Lib', 'site-packages', 'osgeo')
 
