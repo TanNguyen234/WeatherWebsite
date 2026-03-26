@@ -88,8 +88,12 @@
         // Show loading popup
         const loadingContent = createLoadingPopup(lat, lng);
         state.currentPopupMarker = MapCore.addMarkerWithPopup(
-            state.map, lat, lng, loadingContent
+            state.map, lat, lng, loadingContent, { draggable: true }
         );
+        state.currentPopupMarker.on('dragend', async function (event) {
+            const dragged = event.target.getLatLng();
+            await handleMapClick(dragged.lat, dragged.lng);
+        });
         state.currentPopupMarker.openPopup();
 
         try {
@@ -156,7 +160,7 @@
         MapCore.clearMarkerGroup(state.markerGroup);
 
         state.locations.forEach(location => {
-            const marker = L.marker([location.latitude, location.longitude]);
+            const marker = L.marker([location.latitude, location.longitude], { draggable: true });
 
             const popupContent = `
                 <div class="gis-popup">
@@ -175,6 +179,23 @@
             `;
 
             marker.bindPopup(popupContent);
+            marker.on('dragend', function (event) {
+                const dragged = event.target.getLatLng();
+                const movedPopup = createLoadingPopup(dragged.lat, dragged.lng);
+                marker.setPopupContent(movedPopup).openPopup();
+                WeatherApi.getCurrentWeather(dragged.lat, dragged.lng)
+                    .then(function (weather) {
+                        const content = UIHelpers.createWeatherPopupContent(
+                            { lat: dragged.lat, lng: dragged.lng, weather, name: location.name || null },
+                            { isAuthenticated: state.isAuthenticated }
+                        );
+                        marker.setPopupContent(content).openPopup();
+                    })
+                    .catch(function (error) {
+                        marker.setPopupContent(createErrorPopup(dragged.lat, dragged.lng, error.message)).openPopup();
+                    });
+                UIHelpers.showToast('Đã kéo marker sang tọa độ mới (thay đổi này chưa lưu vào vị trí đã lưu).', 'success');
+            });
             state.markerGroup.addLayer(marker);
         });
 
@@ -542,9 +563,29 @@
             popupAnchor: [0, -12]
         });
 
-        state.searchMarker = L.marker([lat, lng], { icon: searchIcon })
+        state.searchMarker = L.marker([lat, lng], { icon: searchIcon, draggable: true })
             .bindPopup(popupContent, { maxWidth: 320 })
             .addTo(state.map);
+        state.searchMarker.on('dragend', function (event) {
+            var moved = event.target.getLatLng();
+            showSearchResultMarker(moved.lat, moved.lng, placeName);
+            WeatherApi.getCurrentWeather(moved.lat, moved.lng)
+                .then(function (weather) {
+                    var weatherContent = UIHelpers.createWeatherPopupContent(
+                        { lat: moved.lat, lng: moved.lng, weather, name: null },
+                        { isAuthenticated: state.isAuthenticated }
+                    );
+                    if (state.searchMarker) {
+                        state.searchMarker.setPopupContent(weatherContent);
+                        state.searchMarker.openPopup();
+                    }
+                })
+                .catch(function () {
+                    if (state.searchMarker) {
+                        state.searchMarker.openPopup();
+                    }
+                });
+        });
         state.searchMarker.openPopup();
     }
 

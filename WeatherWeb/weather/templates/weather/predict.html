@@ -37,9 +37,16 @@
                 <div class="form-group">
                     <label for="horizon-hours">Khoảng dự đoán AI</label>
                     <select id="horizon-hours" class="form-control">
-                        <option value="6">+6 giờ</option>
-                        <option value="12" selected>+12 giờ</option>
-                        <option value="24">+24 giờ</option>
+                        <optgroup label="Theo giờ">
+                            <option value="h:1">+1 giờ</option>
+                            <option value="h:3">+3 giờ</option>
+                            <option value="h:12" selected>+12 giờ</option>
+                            <option value="h:24">+24 giờ</option>
+                        </optgroup>
+                        <optgroup label="Theo ngày">
+                            <option value="d:3">3 ngày</option>
+                            <option value="d:7">7 ngày</option>
+                        </optgroup>
                     </select>
                 </div>
 
@@ -58,7 +65,7 @@
 
     <div class="card is-hidden" id="predict-results">
         <div class="card-header flex-between">
-            <h3>Kết quả so sánh API và AI theo giờ</h3>
+            <h3>Kết quả so sánh API và AI theo mốc dự báo</h3>
             <span class="result-location" id="result-location"></span>
         </div>
 
@@ -122,10 +129,34 @@
                 <option value="humidity">Độ ẩm (%)</option>
                 <option value="wind_speed">Tốc độ gió (m/s)</option>
             </select>
+            <button type="button" class="btn btn-secondary" id="download-csv-btn">Tải CSV</button>
+            <button type="button" class="btn btn-secondary" id="download-image-btn">Tải ảnh</button>
         </div>
 
         <div class="chart-container">
             <canvas id="predict-chart"></canvas>
+        </div>
+
+        <div class="chart-image-box is-hidden" id="chart-image-box">
+            <div class="chart-image-title">Ảnh biểu đồ dự báo</div>
+            <img id="predict-chart-image" alt="Biểu đồ dự báo" class="chart-image-preview">
+        </div>
+
+        <div class="table-wrap">
+            <table class="predict-table" id="predict-table">
+                <thead>
+                    <tr>
+                        <th>Thời gian</th>
+                        <th>API nhiệt độ (°C)</th>
+                        <th>AI nhiệt độ (°C)</th>
+                        <th>API độ ẩm (%)</th>
+                        <th>AI độ ẩm (%)</th>
+                        <th>API gió (m/s)</th>
+                        <th>AI gió (m/s)</th>
+                    </tr>
+                </thead>
+                <tbody id="predict-table-body"></tbody>
+            </table>
         </div>
     </div>
 

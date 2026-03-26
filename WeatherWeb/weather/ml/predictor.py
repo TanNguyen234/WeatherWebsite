@@ -197,8 +197,8 @@ def _bias_correct_series(raw_series: list[float], current_value: float, decay_en
 
 
 def predict_weather(lat: float, lng: float, current_weather: dict, horizon_hours: int = 3) -> dict:
-    if horizon_hours < 1 or horizon_hours > 24:
-        raise ValueError("horizon_hours phải nằm trong khoảng [1, 24]")
+    if horizon_hours < 1 or horizon_hours > 168:
+        raise ValueError("horizon_hours phải nằm trong khoảng [1, 168]")
 
     try:
         history = _fetch_open_meteo_history(lat, lng, days=10)

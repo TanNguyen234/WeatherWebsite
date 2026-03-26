@@ -5,7 +5,7 @@ import json
 import os
 import requests as http_requests
 from django.views import View
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from weather.services.gis_utils import (
@@ -20,7 +20,9 @@ from weather.services.weather_service import get_current_weather
 from weather.services.compare_service import compare_locations
 from weather.services.route_service import generate_route_weather
 from weather.services.layer_config import get_available_layers, get_layer_by_id
-from weather.services.predict_service import get_prediction_comparison
+from weather.services.prediction_service import get_prediction_comparison
+from weather.utils.export import generate_prediction_csv
+from weather.utils.visualize import generate_prediction_chart_png, png_to_base64
 from weather.models import UserLocation, Route
 
 
@@ -389,25 +391,99 @@ class PredictAPIView(View):
 
     def post(self, request):
         try:
-            data = json.loads(request.body.decode())
-            lat = data.get('latitude')
-            lng = data.get('longitude')
-            location_id = data.get('location_id')
-            horizon_hours = int(data.get('horizon_hours', 3))
-
-            if location_id and request.user.is_authenticated:
-                location = get_location_by_id(request.user, location_id)
-                if location:
-                    lat = location.latitude
-                    lng = location.longitude
-
-            if lat is None or lng is None:
-                return JsonResponse({'error': 'Yêu cầu tọa độ'}, status=400)
-
-            payload = get_prediction_comparison(float(lat), float(lng), horizon_hours=horizon_hours)
+            lat, lng, forecast_days, horizon_hours = _extract_predict_input(request)
+            payload = get_prediction_comparison(
+                float(lat),
+                float(lng),
+                forecast_days=forecast_days,
+                horizon_hours=horizon_hours,
+            )
+            metric = _extract_metric(request)
+            chart_png = generate_prediction_chart_png(payload.get('rows', []), metric=metric)
+            payload['chart_image_base64'] = png_to_base64(chart_png)
             return JsonResponse(payload)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
+
+
+def _extract_metric(request) -> str:
+    metric = request.GET.get('metric')
+    if metric is None:
+        try:
+            data = json.loads(request.body.decode()) if request.body else {}
+            metric = data.get('metric')
+        except Exception:
+            metric = None
+    metric = str(metric or 'temperature')
+    if metric not in {'temperature', 'humidity', 'wind_speed'}:
+        return 'temperature'
+    return metric
+
+
+def _extract_predict_input(request):
+    data = json.loads(request.body.decode()) if request.body else {}
+    lat = data.get('latitude')
+    lng = data.get('longitude')
+    location_id = data.get('location_id')
+    forecast_days = data.get('forecast_days')
+    horizon_hours = data.get('horizon_hours')
+
+    if location_id and request.user.is_authenticated:
+        location = get_location_by_id(request.user, location_id)
+        if location:
+            lat = location.latitude
+            lng = location.longitude
+
+    if lat is None or lng is None:
+        raise ValueError('Yêu cầu tọa độ')
+
+    validate_coordinates(float(lat), float(lng))
+    forecast_days = int(forecast_days) if forecast_days is not None else None
+    horizon_hours = int(horizon_hours) if horizon_hours is not None else None
+    return float(lat), float(lng), forecast_days, horizon_hours
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class PredictExportCSVView(View):
+    """Export prediction results to CSV."""
+
+    def post(self, request):
+        try:
+            lat, lng, forecast_days, horizon_hours = _extract_predict_input(request)
+            payload = get_prediction_comparison(
+                lat,
+                lng,
+                forecast_days=forecast_days,
+                horizon_hours=horizon_hours,
+            )
+            csv_bytes = generate_prediction_csv(payload.get('rows', []))
+            response = HttpResponse(csv_bytes, content_type='text/csv; charset=utf-8')
+            response['Content-Disposition'] = 'attachment; filename="predict_result.csv"'
+            return response
+        except Exception as exc:
+            return JsonResponse({'error': str(exc)}, status=400)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class PredictExportImageView(View):
+    """Export prediction visualization as PNG image."""
+
+    def post(self, request):
+        try:
+            lat, lng, forecast_days, horizon_hours = _extract_predict_input(request)
+            metric = _extract_metric(request)
+            payload = get_prediction_comparison(
+                lat,
+                lng,
+                forecast_days=forecast_days,
+                horizon_hours=horizon_hours,
+            )
+            png_bytes = generate_prediction_chart_png(payload.get('rows', []), metric=metric)
+            response = HttpResponse(png_bytes, content_type='image/png')
+            response['Content-Disposition'] = 'attachment; filename="predict_chart.png"'
+            return response
+        except Exception as exc:
+            return JsonResponse({'error': str(exc)}, status=400)
 
 
 @method_decorator(csrf_exempt, name='dispatch')

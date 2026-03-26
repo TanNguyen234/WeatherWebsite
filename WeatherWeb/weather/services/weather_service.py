@@ -41,8 +41,8 @@ def get_hourly_weather_forecast(lat: float, lng: float, hours: int = 12) -> list
 
     Uses Open-Meteo (no key required) and falls back to deterministic projection.
     """
-    if hours < 1 or hours > 48:
-        raise ValueError("hours phải nằm trong khoảng [1, 48]")
+    if hours < 1 or hours > 168:
+        raise ValueError("hours phải nằm trong khoảng [1, 168]")
 
     try:
         return _fetch_hourly_from_open_meteo(lat, lng, hours)
@@ -113,12 +113,13 @@ def _description_from_open_meteo_code(code: int) -> str:
 
 
 def _fetch_hourly_from_open_meteo(lat: float, lng: float, hours: int) -> list[dict]:
+    forecast_days = max(1, min(16, math.ceil(hours / 24)))
     params = {
         "latitude": lat,
         "longitude": lng,
         "hourly": "temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code",
         "timezone": "auto",
-        "forecast_days": 3,
+        "forecast_days": forecast_days,
     }
     resp = requests.get(OPEN_METEO_FORECAST_URL, params=params, timeout=10)
     resp.raise_for_status()
