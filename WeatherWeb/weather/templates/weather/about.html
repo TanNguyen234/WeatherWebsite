@@ -11,156 +11,22 @@
 <div class="page-layout about-page">
     <div class="page-header-section">
         <h2>Giới thiệu WeatherGIS</h2>
-        <p>Tìm hiểu kiến trúc, API và nguyên tắc thiết kế của Nền tảng Thời tiết Web GIS</p>
+        <p>Nền tảng hỗ trợ bạn xem bản đồ và theo dõi thông tin địa lý theo cách trực quan, dễ dùng.</p>
     </div>
 
-    <!-- MTV Architecture -->
     <section class="about-section">
         <div class="card">
             <div class="card-header">
-                <h3>Kiến trúc MTV (Model–Template–View)</h3>
+                <h3>Hệ thống này dùng để làm gì?</h3>
             </div>
-            <div class="architecture-diagram">
-                <div class="arch-component model">
-                    <h4>Model</h4>
-                    <p>Đối tượng không gian &amp; Ý định người dùng</p>
-                    <ul>
-                        <li>UserLocation</li>
-                        <li>LocationGroup</li>
-                        <li>Route</li>
-                    </ul>
-                </div>
-                <div class="arch-arrow">↔</div>
-                <div class="arch-component view">
-                    <h4>View</h4>
-                    <p>Xử lý Request/Response</p>
-                    <ul>
-                        <li>Xác thực đầu vào</li>
-                        <li>Gọi services</li>
-                        <li>Trả về JSON/HTML</li>
-                    </ul>
-                </div>
-                <div class="arch-arrow">↔</div>
-                <div class="arch-component template">
-                    <h4>Template</h4>
-                    <p>Lớp trình bày</p>
-                    <ul>
-                        <li>Cấu trúc HTML</li>
-                        <li>Chỉ hiển thị dữ liệu</li>
-                        <li>Không có logic nghiệp vụ</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- GIS API Layer -->
-    <section class="about-section">
-        <div class="card">
-            <div class="card-header">
-                <h3>Các API GIS đang sử dụng</h3>
-            </div>
-            <div class="api-grid">
-
-                <div class="api-card">
-                    <div class="api-badge api-badge--free">Miễn phí · Không cần API key</div>
-                    <h4>Nominatim (OpenStreetMap)</h4>
-                    <p class="api-purpose">Geocoding và reverse geocoding</p>
-                    <ul>
-                        <li>
-                            <strong>Tìm địa điểm theo tên:</strong><br>
-                            <code>GET /api/geocode/?q=Ben Thanh Market</code><br>
-                            → Django proxy → <code>nominatim.openstreetmap.org/search</code>
-                        </li>
-                        <li>
-                            <strong>Xác định quốc gia của điểm:</strong><br>
-                            <code>GET nominatim.../reverse?lat=…&amp;lon=…&amp;zoom=3</code><br>
-                            → Trả về <code>address.country_code</code> (ISO-2)
-                        </li>
-                    </ul>
-                    <div class="principle-box principle-box--compact-top">
-                        Proxy server-side tránh CORS và hạn chế User-Agent của browser.
-                    </div>
-                </div>
-
-                <div class="api-card">
-                    <div class="api-badge api-badge--free">Miễn phí · Không cần API key</div>
-                    <h4>OSRM (Open Source Routing Machine)</h4>
-                    <p class="api-purpose">Bộ máy định tuyến đường bộ</p>
-                    <ul>
-                        <li>
-                            <strong>Routing 2 điểm:</strong><br>
-                            <code>GET /api/route-geometry/?slat=…&amp;slng=…&amp;elat=…&amp;elng=…</code><br>
-                            → Django proxy → <code>router.project-osrm.org/route/v1/driving/</code>
-                        </li>
-                        <li>
-                            <strong>Routing nội địa (cùng quốc gia):</strong><br>
-                            3-waypoint: <code>start → midpoint → end</code><br>
-                            → Buộc OSRM không đi qua lãnh thổ nước khác
-                        </li>
-                        <li><strong>Trả về:</strong> GeoJSON LineString + khoảng cách + thời gian</li>
-                    </ul>
-                    <div class="principle-box principle-box--compact-top">
-                        Leaflet chỉ <em>hiển thị</em> kết quả, không tính toán đường đi.
-                    </div>
-                </div>
-
-                <div class="api-card">
-                    <div class="api-badge api-badge--key">Cần API key</div>
-                    <h4>OpenWeatherMap</h4>
-                    <p class="api-purpose">Dữ liệu thời tiết thực tế</p>
-                    <ul>
-                        <li>Nhiệt độ, độ ẩm, tốc độ gió</li>
-                        <li>Gọi theo tọa độ (lat, lon)</li>
-                        <li>Lấy theo yêu cầu, không lưu vào DB</li>
-                    </ul>
-                </div>
-
-            </div>
-        </div>
-    </section>
-
-    <section class="about-section">
-        <div class="card highlight-card">
-            <div class="card-header">
-                <h3>Dự đoán theo chuỗi giờ trên trang Predict</h3>
-            </div>
-            <div class="flow-diagram">
-                <div class="flow-step">
-                    <div class="step-number">1</div>
-                    <div class="step-content">
-                        <h4>Chọn điểm phân tích</h4>
-                        <p>Người dùng chọn vị trí đã lưu hoặc click trực tiếp trên bản đồ.</p>
-                    </div>
-                </div>
-                <div class="flow-connector">→</div>
-                <div class="flow-step">
-                    <div class="step-number">2</div>
-                    <div class="step-content">
-                        <h4>Chọn khoảng giờ</h4>
-                        <p>Hệ thống hỗ trợ cửa sổ dự đoán 6 giờ, 12 giờ hoặc 24 giờ.</p>
-                    </div>
-                </div>
-                <div class="flow-connector">→</div>
-                <div class="flow-step">
-                    <div class="step-number">3</div>
-                    <div class="step-content">
-                        <h4>Ghép API và AI</h4>
-                        <p>Backend trả chuỗi API theo giờ và chuỗi AI theo giờ để so sánh cùng trục thời gian.</p>
-                    </div>
-                </div>
-                <div class="flow-connector">→</div>
-                <div class="flow-step">
-                    <div class="step-number">4</div>
-                    <div class="step-content">
-                        <h4>Biểu đồ 2 đường</h4>
-                        <p>Mỗi feature có 2 đường: một đường API và một đường AI để theo dõi xu hướng.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="principle-box">
-                <strong>Nguyên tắc hiển thị:</strong> tập trung vào chuỗi thời gian và độ ổn định của xu hướng,
-                không hiển thị khối chênh lệch rời rạc gây nhiễu.
+            <div class="data-type-content">
+                <p>WeatherGIS giúp bạn làm việc với dữ liệu địa lý ngay trên bản đồ:</p>
+                <ul>
+                    <li>Xem vị trí trực tiếp theo tọa độ trên bản đồ.</li>
+                    <li>Lưu các điểm quan trọng để dùng lại khi cần.</li>
+                    <li>Theo dõi tuyến đường giữa hai địa điểm.</li>
+                    <li>So sánh thông tin theo từng khu vực để hỗ trợ ra quyết định.</li>
+                </ul>
             </div>
         </div>
     </section>
@@ -168,351 +34,44 @@
     <section class="about-section">
         <div class="card">
             <div class="card-header">
-                <h3>Công nghệ AI sử dụng</h3>
-            </div>
-            <div class="schema-diagram">
-                <div class="table-box">
-                    <h4>Chronos (Time-series Foundation Model)</h4>
-                    <ul>
-                        <li>Mô hình: <code>amazon/chronos-t5-tiny</code></li>
-                        <li>Vai trò: Dự đoán chuỗi thời gian theo giờ cho nhiệt độ, độ ẩm, gió</li>
-                        <li>Kiểu triển khai: Suy luận cục bộ trên backend</li>
-                    </ul>
-                </div>
-                <div class="table-box">
-                    <h4>PyTorch</h4>
-                    <ul>
-                        <li>Thư viện runtime cho suy luận mô hình</li>
-                        <li>Chạy trên CPU để đảm bảo tương thích môi trường</li>
-                        <li>Không yêu cầu huấn luyện lại trong ứng dụng</li>
-                    </ul>
-                </div>
-                <div class="table-box">
-                    <h4>Open-Meteo Archive</h4>
-                    <ul>
-                        <li>Cung cấp lịch sử theo giờ làm ngữ cảnh cho AI</li>
-                        <li>Dùng dữ liệu lịch sử để tạo chuỗi dự đoán tương lai</li>
-                        <li>Không lưu dữ liệu lịch sử vào cơ sở dữ liệu nội bộ</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="about-section">
-        <div class="card">
-            <div class="card-header">
-                <h3>Cách sử dụng tính năng AI trên trang Predict</h3>
-            </div>
-            <div class="flow-diagram">
-                <div class="flow-step">
-                    <div class="step-number">1</div>
-                    <div class="step-content">
-                        <h4>Chọn vị trí</h4>
-                        <p>Chọn vị trí đã lưu hoặc click trực tiếp trên bản đồ.</p>
-                    </div>
-                </div>
-                <div class="flow-connector">→</div>
-                <div class="flow-step">
-                    <div class="step-number">2</div>
-                    <div class="step-content">
-                        <h4>Chọn khoảng giờ</h4>
-                        <p>Chọn 6 giờ, 12 giờ hoặc 24 giờ để xác định độ dài chuỗi dự đoán.</p>
-                    </div>
-                </div>
-                <div class="flow-connector">→</div>
-                <div class="flow-step">
-                    <div class="step-number">3</div>
-                    <div class="step-content">
-                        <h4>Phân tích</h4>
-                        <p>Nhấn nút phân tích để backend trả về chuỗi API và chuỗi AI cùng trục giờ.</p>
-                    </div>
-                </div>
-                <div class="flow-connector">→</div>
-                <div class="flow-step">
-                    <div class="step-number">4</div>
-                    <div class="step-content">
-                        <h4>Đọc biểu đồ đường</h4>
-                        <p>Chọn feature cần xem. Biểu đồ sẽ hiển thị hai đường: API và AI.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="principle-box principle-box--compact-top">
-                Khuyến nghị vận hành: so sánh xu hướng biến động theo giờ giữa hai đường thay vì đánh giá theo một điểm đơn lẻ.
-            </div>
-        </div>
-    </section>
-
-    <!-- Định tuyến theo quốc gia -->
-    <section class="about-section">
-        <div class="card highlight-card">
-            <div class="card-header">
-                <h3>Định tuyến theo quốc gia - Đảm bảo đi nội địa</h3>
-            </div>
-            <div class="flow-diagram">
-                <div class="flow-step">
-                    <div class="step-number">1</div>
-                    <div class="step-content">
-                        <h4>Chọn 2 điểm</h4>
-                        <p>Người dùng chọn điểm A và B trên trang Tuyến đường</p>
-                    </div>
-                </div>
-                <div class="flow-connector">→</div>
-                <div class="flow-step">
-                    <div class="step-number">2</div>
-                    <div class="step-content">
-                        <h4>Detect quốc gia</h4>
-                        <p>Backend reverse-geocode cả 2 điểm qua Nominatim
-                           (<code>zoom=3</code>) để lấy <code>country_code</code></p>
-                    </div>
-                </div>
-                <div class="flow-connector">→</div>
-                <div class="flow-step">
-                    <div class="step-number">3</div>
-                    <div class="step-content">
-                        <h4>3-Waypoint OSRM</h4>
-                        <p>Nếu cùng nước → thêm midpoint: <code>A → midpoint → B</code>
-                           buộc đường đi không vòng ra nước khác</p>
-                    </div>
-                </div>
-                <div class="flow-connector">→</div>
-                <div class="flow-step">
-                    <div class="step-number">4</div>
-                    <div class="step-content">
-                        <h4>Validate Geometry</h4>
-                        <p>Kiểm tra từng tọa độ với bounding box quốc gia → nếu thoát biên giới
-                           → cảnh báo <code>cross_border: true</code></p>
-                    </div>
-                </div>
-            </div>
-            <div class="principle-box">
-                <strong>Kết quả:</strong> Route giữa 2 điểm cùng quốc gia luôn đi theo mạng lưới
-                đường giao thông nội địa, không đi vòng qua lãnh thổ nước khác.
-            </div>
-        </div>
-    </section>
-
-    <!-- Luồng dữ liệu -->
-    <section class="about-section">
-        <div class="card">
-            <div class="card-header">
-                <h3>Luồng dữ liệu: Frontend ↔ Backend</h3>
-            </div>
-            <div class="flow-diagram">
-                <div class="flow-step">
-                    <div class="step-number">1</div>
-                    <div class="step-content">
-                        <h4>Tương tác người dùng</h4>
-                        <p>Click bản đồ hoặc tìm kiếm địa điểm theo tên</p>
-                        <code>map.on('click') / place-search input</code>
-                    </div>
-                </div>
-                <div class="flow-connector">→</div>
-                <div class="flow-step">
-                    <div class="step-number">2</div>
-                    <div class="step-content">
-                        <h4>Gọi API proxy</h4>
-                        <code>GET /api/geocode/?q=…</code>
-                        <code>GET /api/weather/</code>
-                        <code>GET /api/route-geometry/</code>
-                    </div>
-                </div>
-                <div class="flow-connector">→</div>
-                <div class="flow-step">
-                    <div class="step-number">3</div>
-                    <div class="step-content">
-                        <h4>Service Layer</h4>
-                        <p>Gọi API bên ngoài, validate, xử lý</p>
-                        <code>Nominatim / OSRM / OWM</code>
-                    </div>
-                </div>
-                <div class="flow-connector">→</div>
-                <div class="flow-step">
-                    <div class="step-number">4</div>
-                    <div class="step-content">
-                        <h4>Hiển thị kết quả</h4>
-                        <p>Marker, popup, polyline trên Leaflet</p>
-                        <code>L.marker / L.polyline</code>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Không gian và thời gian -->
-    <section class="about-section">
-        <div class="grid-2">
-            <div class="card">
-                <div class="card-header">
-                    <h3>Dữ liệu không gian</h3>
-                </div>
-                <div class="data-type-content">
-                    <p><strong>Định nghĩa:</strong> Dữ liệu liên quan đến vị trí địa lý</p>
-                    <ul>
-                        <li>Tọa độ (vĩ độ, kinh độ)</li>
-                        <li>Điểm, đường, đa giác</li>
-                        <li>Phân tích dựa trên vị trí</li>
-                    </ul>
-                    <div class="example-box">
-                        <strong>Ví dụ trong ứng dụng:</strong>
-                        <ul>
-                            <li>Vị trí người dùng đã lưu</li>
-                            <li>Tuyến đường đường bộ thực tế giữa 2 điểm</li>
-                            <li>Thời tiết tại tọa độ cụ thể</li>
-                            <li>Kết quả tìm kiếm địa danh</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h3>Dữ liệu thời gian</h3>
-                </div>
-                <div class="data-type-content">
-                    <p><strong>Định nghĩa:</strong> Dữ liệu thay đổi theo thời gian</p>
-                    <ul>
-                        <li>Dữ liệu chuỗi thời gian</li>
-                        <li>Hồ sơ lịch sử</li>
-                        <li>Dự báo &amp; dự đoán</li>
-                    </ul>
-                    <div class="example-box">
-                        <strong>Ví dụ trong ứng dụng:</strong>
-                        <ul>
-                            <li>Dự báo theo giờ (24 giờ tới)</li>
-                            <li>Dự báo theo ngày (7 ngày tới)</li>
-                            <li>Xu hướng thời tiết theo thời gian</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Lý do không lưu dữ liệu thời tiết -->
-    <section class="about-section">
-        <div class="card highlight-card">
-            <div class="card-header">
-                <h3>Tại sao không lưu dữ liệu thời tiết vào Database</h3>
+                <h3>Lợi ích dành cho người dùng</h3>
             </div>
             <div class="reasons-grid">
                 <div class="reason-item">
-                    <span class="reason-icon">Làm mới</span>
-                    <h4>Dữ liệu cần cập nhật</h4>
-                    <p>Dữ liệu thời tiết thay đổi nhanh chóng. Dữ liệu lưu trữ trở nên lỗi thời trong vài phút.</p>
+                    <h4>Nắm thông tin nhanh</h4>
+                    <p>Xem dữ liệu trực quan trên bản đồ để hiểu khu vực bạn quan tâm chỉ trong vài bước.</p>
                 </div>
                 <div class="reason-item">
-                    <span class="reason-icon">Chính xác</span>
-                    <h4>Độ chính xác API</h4>
-                    <p>Các API bên ngoài (OpenWeatherMap) duy trì độ chính xác và cập nhật dữ liệu.</p>
+                    <h4>Dễ theo dõi</h4>
+                    <p>Lưu lại các địa điểm thường dùng để tiết kiệm thời gian cho lần truy cập sau.</p>
                 </div>
                 <div class="reason-item">
-                    <span class="reason-icon">Hiệu quả</span>
-                    <h4>Hiệu quả lưu trữ</h4>
-                    <p>Không cần sao chép dữ liệu đã được quản lý bởi các dịch vụ thời tiết.</p>
+                    <h4>Hỗ trợ quyết định</h4>
+                    <p>So sánh thông tin giữa các điểm giúp bạn chọn phương án phù hợp hơn.</p>
                 </div>
                 <div class="reason-item">
-                    <span class="reason-icon">Kiến trúc</span>
-                    <h4>Rõ ràng kiến trúc</h4>
-                    <p>Database lưu trữ ý định người dùng (vị trí), không phải dữ liệu bên ngoài.</p>
+                    <h4>Thân thiện với mọi người</h4>
+                    <p>Giao diện đơn giản, không cần kiến thức chuyên sâu vẫn có thể sử dụng hiệu quả.</p>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-section">
+        <div class="card highlight-card">
+            <div class="card-header">
+                <h3>Bạn có thể làm gì trên hệ thống?</h3>
+            </div>
+            <div class="data-type-content">
+                <ul>
+                    <li>Khám phá bản đồ và chọn đúng vị trí cần theo dõi.</li>
+                    <li>Lưu địa điểm cá nhân để quản lý dữ liệu gọn gàng.</li>
+                    <li>Xem và so sánh thông tin giữa nhiều điểm địa lý khác nhau.</li>
+                    <li>Quan sát tuyến đường giữa các vị trí để phục vụ kế hoạch di chuyển.</li>
+                </ul>
             </div>
             <div class="principle-box">
-                <strong>Nguyên tắc cốt lõi:</strong> Lấy dữ liệu theo yêu cầu, không tích trữ dữ liệu.
-            </div>
-        </div>
-    </section>
-
-    <!-- Lược đồ cơ sở dữ liệu -->
-    <section class="about-section">
-        <div class="card">
-            <div class="card-header">
-                <h3>Lược đồ cơ sở dữ liệu (sẵn sàng cho PostGIS)</h3>
-            </div>
-            <div class="schema-diagram">
-                <div class="table-box">
-                    <h4>user_location</h4>
-                    <ul>
-                        <li><code>id</code> SERIAL PK</li>
-                        <li><code>user_id</code> FK → auth_user</li>
-                        <li><code>name</code> VARCHAR(255)</li>
-                        <li><code>latitude</code> FLOAT</li>
-                        <li><code>longitude</code> FLOAT</li>
-                        <li><code>created_at</code> TIMESTAMP</li>
-                    </ul>
-                    <p class="future-note">Tương lai: lat/lng → POINT SRID 4326</p>
-                </div>
-                <div class="table-box">
-                    <h4>location_group</h4>
-                    <ul>
-                        <li><code>id</code> SERIAL PK</li>
-                        <li><code>user_id</code> FK → auth_user</li>
-                        <li><code>name</code> VARCHAR(255)</li>
-                        <li><code>created_at</code> TIMESTAMP</li>
-                    </ul>
-                </div>
-                <div class="table-box">
-                    <h4>route</h4>
-                    <ul>
-                        <li><code>id</code> SERIAL PK</li>
-                        <li><code>user_id</code> FK → auth_user</li>
-                        <li><code>name</code> VARCHAR(255)</li>
-                        <li><code>start_location_id</code> FK</li>
-                        <li><code>end_location_id</code> FK</li>
-                    </ul>
-                    <p class="future-note">Tương lai: → LINESTRING</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Công nghệ -->
-    <section class="about-section">
-        <div class="card">
-            <div class="card-header">
-                <h3>Công nghệ sử dụng</h3>
-            </div>
-            <div class="tech-grid">
-                <div class="tech-item">
-                    <span class="tech-icon">Django</span>
-                    <h4>Django 4.x</h4>
-                    <p>Framework backend theo MTV</p>
-                </div>
-                <div class="tech-item">
-                    <span class="tech-icon">PostgreSQL</span>
-                    <h4>PostgreSQL</h4>
-                    <p>Cơ sở dữ liệu (sẵn sàng PostGIS)</p>
-                </div>
-                <div class="tech-item">
-                    <span class="tech-icon">Leaflet</span>
-                    <h4>Leaflet.js</h4>
-                    <p>Bản đồ tương tác</p>
-                </div>
-                <div class="tech-item">
-                    <span class="tech-icon">OSM</span>
-                    <h4>Nominatim</h4>
-                    <p>Geocoding (OpenStreetMap)</p>
-                </div>
-                <div class="tech-item">
-                    <span class="tech-icon">OSRM</span>
-                    <h4>OSRM</h4>
-                    <p>Bộ máy định tuyến đường bộ</p>
-                </div>
-                <div class="tech-item">
-                    <span class="tech-icon">OWM</span>
-                    <h4>OpenWeatherMap</h4>
-                    <p>API thời tiết thực tế</p>
-                </div>
-                <div class="tech-item">
-                    <span class="tech-icon">Chart.js</span>
-                    <h4>Chart.js</h4>
-                    <p>Trực quan hóa dữ liệu</p>
-                </div>
-                <div class="tech-item">
-                    <span class="tech-icon">CSS</span>
-                    <h4>CSS Custom</h4>
-                    <p>Giao diện GIS chuyên nghiệp</p>
-                </div>
+                Mục tiêu của WeatherGIS là giúp bạn hiểu dữ liệu địa lý nhanh hơn, rõ ràng hơn và dễ ứng dụng trong công việc hằng ngày.
             </div>
         </div>
     </section>

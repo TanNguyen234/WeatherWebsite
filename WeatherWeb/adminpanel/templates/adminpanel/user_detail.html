@@ -1,0 +1,112 @@
+{% extends "adminpanel/base_admin.html" %}
+
+{% block title %}Chi tiết người dùng – Admin WeatherGIS{% endblock %}
+{% block page_title %}Chi tiết người dùng{% endblock %}
+{% block page_subtitle %}{{ target_user.username }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'adminpanel:users' %}" class="admin-btn admin-btn--ghost">Quay lại danh sách</a>
+{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h3 class="admin-card-title">Thông tin tài khoản</h3>
+    </div>
+    <div class="admin-card-body">
+        <table class="admin-table">
+            <tbody>
+                <tr><th>Username</th><td>{{ target_user.username }}</td></tr>
+                <tr><th>Email</th><td>{{ target_user.email|default:"-" }}</td></tr>
+                <tr><th>Họ</th><td>{{ target_user.first_name|default:"-" }}</td></tr>
+                <tr><th>Tên</th><td>{{ target_user.last_name|default:"-" }}</td></tr>
+                <tr><th>Vai trò hệ thống</th>
+                    <td>
+                        {% if target_user.is_superuser %}Superuser
+                        {% elif target_user.is_staff %}Staff
+                        {% else %}User{% endif %}
+                    </td>
+                </tr>
+                <tr><th>Trạng thái</th><td>{% if target_user.is_active %}Hoạt động{% else %}Vô hiệu{% endif %}</td></tr>
+                <tr><th>Ngày tạo</th><td>{{ target_user.date_joined|date:"d/m/Y H:i" }}</td></tr>
+                <tr><th>Đăng nhập gần nhất</th><td>{{ target_user.last_login|date:"d/m/Y H:i"|default:"-" }}</td></tr>
+                <tr><th>Role profile</th><td>{% if profile %}{{ profile.get_role_display }} ({{ profile.role }}){% else %}-{% endif %}</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h3 class="admin-card-title">Thống kê dữ liệu</h3>
+    </div>
+    <div class="admin-card-body">
+        <table class="admin-table">
+            <tbody>
+                <tr><th>Số vị trí đã lưu</th><td>{{ location_count }}</td></tr>
+                <tr><th>Số tuyến đường đã lưu</th><td>{{ route_count }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h3 class="admin-card-title">Danh sách vị trí (tối đa 20)</h3>
+    </div>
+    <div class="admin-card-body admin-card-body--flush">
+        <table class="admin-table admin-table--hover">
+            <thead>
+                <tr>
+                    <th>Tên</th>
+                    <th>Vĩ độ</th>
+                    <th>Kinh độ</th>
+                    <th>Ngày tạo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for loc in locations %}
+                <tr>
+                    <td>{{ loc.name|default:"-" }}</td>
+                    <td>{{ loc.latitude }}</td>
+                    <td>{{ loc.longitude }}</td>
+                    <td>{{ loc.created_at|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="admin-table-empty">Chưa có dữ liệu vị trí</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h3 class="admin-card-title">Danh sách tuyến đường (tối đa 20)</h3>
+    </div>
+    <div class="admin-card-body admin-card-body--flush">
+        <table class="admin-table admin-table--hover">
+            <thead>
+                <tr>
+                    <th>Tên tuyến</th>
+                    <th>Điểm bắt đầu</th>
+                    <th>Điểm kết thúc</th>
+                    <th>Ngày tạo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in routes %}
+                <tr>
+                    <td>{{ row.name }}</td>
+                    <td>{{ row.start_location.name|default:"-" }}</td>
+                    <td>{{ row.end_location.name|default:"-" }}</td>
+                    <td>{{ row.created_at|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="admin-table-empty">Chưa có dữ liệu tuyến đường</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

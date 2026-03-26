@@ -78,6 +78,7 @@
                         {% endif %}
                     </td>
                     <td>
+                        <a href="{% url 'adminpanel:user-detail' row.user.pk %}" class="admin-btn admin-btn--sm admin-btn--ghost">Chi tiết</a>
                         {% if row.user.pk != request.user.pk %}
                         <button
                             class="admin-btn admin-btn--sm admin-btn--toggle {% if row.user.is_active %}admin-btn--warn{% else %}admin-btn--success{% endif %}"

@@ -148,6 +148,33 @@ class UserListView(AdminBaseView):
         return render(request, self.template_name, context)
 
 
+class UserDetailView(AdminBaseView):
+    """Detailed view for a single user with real data from DB."""
+
+    template_name = 'adminpanel/user_detail.html'
+
+    def get(self, request, user_id):
+        target_user = get_object_or_404(User, pk=user_id)
+
+        try:
+            profile = target_user.profile
+        except Exception:
+            profile = None
+
+        locations = UserLocation.objects.filter(user=target_user).order_by('-created_at')[:20]
+        routes = Route.objects.select_related('start_location', 'end_location').filter(user=target_user).order_by('-created_at')[:20]
+
+        context = {
+            'target_user': target_user,
+            'profile': profile,
+            'locations': locations,
+            'routes': routes,
+            'location_count': UserLocation.objects.filter(user=target_user).count(),
+            'route_count': Route.objects.filter(user=target_user).count(),
+        }
+        return render(request, self.template_name, context)
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 class UserToggleActiveView(AdminBaseView):
     """Toggle a user's is_active status via POST (AJAX)."""
