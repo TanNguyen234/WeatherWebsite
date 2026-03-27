@@ -174,6 +174,32 @@ body {
 }
 
 /* ========================================
+   FOOTER
+======================================== */
+.site-footer {
+    background: #0f172a;
+    color: rgba(255, 255, 255, 0.9);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.site-footer__content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0.85rem 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+}
+
+.site-footer__brand {
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+
+/* ========================================
    GIS LAYOUT (Map + Sidebar)
 ======================================== */
 .gis-layout {

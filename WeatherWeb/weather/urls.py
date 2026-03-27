@@ -1,4 +1,5 @@
 from django.urls import path
+from django.contrib.auth import views as auth_views
 from weather.views.map import MapView
 from weather.views.predict import PredictView
 from weather.views.compare import CompareView
@@ -14,6 +15,8 @@ from weather.views.api import (
     RouteAPIView,
     RouteCreateAPIView,
     PredictAPIView,
+    PredictExportCSVView,
+    PredictExportImageView,
     LayerConfigAPIView,
     LayerPointDataAPIView,
     GeocodeProxyView,
@@ -37,6 +40,8 @@ urlpatterns = [
     # API endpoints
     path('api/weather/', WeatherAPIView.as_view(), name='api-weather'),
     path('api/predict/', PredictAPIView.as_view(), name='api-predict'),
+    path('predict/export/csv/', PredictExportCSVView.as_view(), name='predict-export-csv'),
+    path('predict/export/image/', PredictExportImageView.as_view(), name='predict-export-image'),
     path('api/locations/', LocationAPIView.as_view(), name='api-locations'),
     path('api/locations/<int:location_id>/', LocationDetailAPIView.as_view(), name='api-location-detail'),
     path('api/compare/', CompareAPIView.as_view(), name='api-compare'),
@@ -50,4 +55,34 @@ urlpatterns = [
     # Third-party proxies (server-side geocoding + routing)
     path('api/geocode/', GeocodeProxyView.as_view(), name='api-geocode'),
     path('api/route-geometry/', RouteGeometryProxyView.as_view(), name='api-route-geometry'),
+
+    path(
+        'password-reset/',
+        auth_views.PasswordResetView.as_view(
+            template_name='registration/password_reset_form.html',
+            email_template_name='registration/password_reset_email.html',
+        ),
+        name='password_reset',
+    ),
+    path(
+        'password-reset/done/',
+        auth_views.PasswordResetDoneView.as_view(
+            template_name='registration/password_reset_done.html'
+        ),
+        name='password_reset_done',
+    ),
+    path(
+        'reset/<uidb64>/<token>/',
+        auth_views.PasswordResetConfirmView.as_view(
+            template_name='registration/password_reset_confirm.html'
+        ),
+        name='password_reset_confirm',
+    ),
+    path(
+        'reset/done/',
+        auth_views.PasswordResetCompleteView.as_view(
+            template_name='registration/password_reset_complete.html'
+        ),
+        name='password_reset_complete',
+    ),
 ]

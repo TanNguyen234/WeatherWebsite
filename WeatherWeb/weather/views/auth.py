@@ -9,6 +9,8 @@ from django.views import View
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 
 
 def _redirect_after_login(user, next_url=None):
@@ -79,25 +81,48 @@ class RegisterView(View):
 
     def post(self, request):
         username  = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip()
         password  = request.POST.get('password', '')
         password2 = request.POST.get('password2', '')
 
-        if not username or not password:
+        form_data = {
+            'username': username,
+            'email': email,
+        }
+
+        if not username or not email or not password:
             return render(request, self.template_name, {
-                'error': 'Tên đăng nhập và mật khẩu là bắt buộc'
+                'error': 'Tên đăng nhập, email và mật khẩu là bắt buộc',
+                'form_data': form_data,
+            })
+
+        try:
+            validate_email(email)
+        except ValidationError:
+            return render(request, self.template_name, {
+                'error': 'Email không hợp lệ',
+                'form_data': form_data,
             })
 
         if password != password2:
             return render(request, self.template_name, {
-                'error': 'Mật khẩu không khớp'
+                'error': 'Mật khẩu không khớp',
+                'form_data': form_data,
             })
 
         if User.objects.filter(username=username).exists():
             return render(request, self.template_name, {
-                'error': 'Tên đăng nhập đã tồn tại'
+                'error': 'Tên đăng nhập đã tồn tại',
+                'form_data': form_data,
             })
 
-        user = User.objects.create_user(username=username, password=password)
+        if User.objects.filter(email__iexact=email).exists():
+            return render(request, self.template_name, {
+                'error': 'Email đã được sử dụng',
+                'form_data': form_data,
+            })
+
+        user = User.objects.create_user(username=username, email=email, password=password)
         # Ensure a UserProfile exists for the new user
         try:
             from weather.models import UserProfile

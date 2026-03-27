@@ -72,6 +72,31 @@ const WeatherApi = (function () {
     }
 
     /**
+     * Make a POST request and return binary blob response
+     * @param {string} url - API endpoint
+     * @param {Object} data - Request body
+     * @returns {Promise<Blob>} Response blob
+     */
+    async function postBlob(url, data = {}) {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),
+                'Accept': '*/*'
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: 'Request failed' }));
+            throw new Error(error.error || 'Request failed');
+        }
+
+        return response.blob();
+    }
+
+    /**
      * Make a DELETE request
      * @param {string} url - API endpoint
      * @returns {Promise} Response data
@@ -145,16 +170,27 @@ const WeatherApi = (function () {
         return post('/api/predict/', payload);
     }
 
+    async function exportPredictionCsv(payload) {
+        return postBlob('/predict/export/csv/', payload);
+    }
+
+    async function exportPredictionImage(payload) {
+        return postBlob('/predict/export/image/', payload);
+    }
+
     // Public API
     return {
         get,
         post,
         del,
+        postBlob,
         getCSRFToken,
         getCurrentWeather,
         saveLocation,
         deleteLocation,
         compareLocations,
-        getPredictionComparison
+        getPredictionComparison,
+        exportPredictionCsv,
+        exportPredictionImage
     };
 })();
