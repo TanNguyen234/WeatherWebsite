@@ -62,7 +62,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-block">
+                <button type="submit" class="btn btn-primary btn-block" id="analyze-route-btn">
                     Phân tích thời tiết tuyến đường
                 </button>
             </form>
@@ -93,23 +93,54 @@
         </div>
 
         <!-- Route Results -->
-        <div class="route-results card" id="route-results" style="display: none;">
+        <div class="route-results card route-results--hidden" id="route-results">
             <div class="card-header flex-between">
                 <div>
-                    <h3 style="margin:0 0 .25rem">Dữ liệu thời tiết tuyến đường</h3>
+                    <h3 class="route-results-title">Dữ liệu thời tiết tuyến đường</h3>
                     <div id="route-status" class="route-status route-status--info"></div>
                 </div>
                 <button class="btn btn-sm btn-secondary" id="save-route-btn">Lưu tuyến đường</button>
             </div>
+
+            <div class="route-summary" id="route-summary">
+                <div class="summary-card">
+                    <span class="summary-label">Đoạn thời tiết xấu nhất</span>
+                    <strong id="summary-worst">--</strong>
+                </div>
+                <div class="summary-card">
+                    <span class="summary-label">Nhiệt độ trung bình</span>
+                    <strong id="summary-temp">--</strong>
+                </div>
+                <div class="summary-card">
+                    <span class="summary-label">Gió trung bình</span>
+                    <strong id="summary-wind">--</strong>
+                </div>
+                <div class="summary-card">
+                    <span class="summary-label">Độ tin cậy dữ liệu</span>
+                    <strong id="summary-success">--</strong>
+                </div>
+            </div>
+
+            <div class="route-legend" id="route-legend">
+                <span class="legend-title">Mức độ thời tiết theo đoạn:</span>
+                <span class="legend-chip legend-chip--low">Ổn định</span>
+                <span class="legend-chip legend-chip--medium">Cần chú ý</span>
+                <span class="legend-chip legend-chip--high">Rủi ro cao</span>
+                <span class="legend-note">Chỉ số dựa trên mưa, gió và loại thời tiết</span>
+            </div>
+
             <div class="table-container">
                 <table class="data-table">
                     <thead>
                         <tr>
                             <th>#</th>
                             <th>Vị trí</th>
-                            <th>Nhiệt độ</th>
-                            <th>Độ ẩm</th>
-                            <th>Gió</th>
+                            <th>Nhiệt độ (°C)</th>
+                            <th>Độ ẩm (%)</th>
+                            <th>Gió (m/s)</th>
+                            <th>Mưa 1h (mm)</th>
+                            <th>Nguồn</th>
+                            <th>Trạng thái</th>
                             <th>Điều kiện</th>
                         </tr>
                     </thead>

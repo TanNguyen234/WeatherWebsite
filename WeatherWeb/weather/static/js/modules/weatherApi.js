@@ -162,6 +162,15 @@ const WeatherApi = (function () {
     }
 
     /**
+     * Analyze weather along a route with backend aggregation.
+     * @param {Object} payload - {start_id, end_id, point_count}
+     * @returns {Promise} Route analysis payload
+     */
+    async function analyzeRouteWeather(payload) {
+        return post('/api/route/', payload);
+    }
+
+    /**
      * Compare current API result and AI prediction
      * @param {Object} payload - {location_id}|{latitude,longitude} + horizon_hours
      * @returns {Promise} Prediction comparison payload
@@ -189,6 +198,7 @@ const WeatherApi = (function () {
         saveLocation,
         deleteLocation,
         compareLocations,
+        analyzeRouteWeather,
         getPredictionComparison,
         exportPredictionCsv,
         exportPredictionImage
