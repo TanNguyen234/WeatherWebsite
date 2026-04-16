@@ -121,7 +121,9 @@ def _fetch_point_weather(point: dict, generated_at: str) -> dict:
 
 
 def analyze_route_weather(start_location, end_location, point_count=5, max_workers=4) -> dict:
-    if int(start_location.id) == int(end_location.id):
+    s_id = getattr(start_location, 'id', None)
+    e_id = getattr(end_location, 'id', None)
+    if s_id is not None and e_id is not None and int(s_id) == int(e_id):
         raise ValueError("Diem xuat phat va diem dich phai khac nhau")
 
     bounded_points = max(2, min(20, int(point_count)))

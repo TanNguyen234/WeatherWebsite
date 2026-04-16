@@ -266,6 +266,31 @@ const UIHelpers = (function () {
         return html;
     }
 
+    /**
+     * Initialize password visibility toggles
+     * Find all toggle buttons and attach click listeners
+     */
+    function initPasswordToggles() {
+        const toggles = document.querySelectorAll('.password-toggle');
+        
+        toggles.forEach(toggle => {
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                const input = this.parentElement.querySelector('input');
+                if (!input) return;
+                
+                const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                input.setAttribute('type', type);
+                
+                // Toggle eye icon (Eye / Eye Off)
+                const isVisible = type === 'text';
+                this.innerHTML = isVisible ? 
+                    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-off"><path d="M9.88 9.88L1 1l22 22-2.12-2.12M12 4c.69 0 1.35.07 2 .21a10.05 10.05 0 0 1 5 3.29M20.39 12.39A10.07 10.07 0 0 1 23 12c-7 0-11-8-11-8a18.45 18.45 0 0 0-3.39 1.39M14.12 14.12A3 3 0 1 1 9.88 9.88"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><path d="M17.94 17.92A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/></svg>` :
+                    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
+            });
+        });
+    }
+
     // Add CSS for toast animations
     const style = document.createElement('style');
     style.textContent = `
@@ -294,6 +319,7 @@ const UIHelpers = (function () {
         showToast,
         parseInitialData,
         debounce,
-        createLocationSelect
+        createLocationSelect,
+        initPasswordToggles
     };
 })();

@@ -300,27 +300,55 @@ class RouteAPIView(View):
     def post(self, request):
         if not request.user.is_authenticated:
             return JsonResponse({'error': 'Yêu cầu xác thực'}, status=401)
-        
+
         try:
             data = json.loads(request.body.decode())
-            start_id = data.get('start_id')
-            end_id = data.get('end_id')
+            start_id  = data.get('start_id')
+            end_id    = data.get('end_id')
+            start_lat = data.get('start_lat')
+            start_lng = data.get('start_lng')
+            end_lat   = data.get('end_lat')
+            end_lng   = data.get('end_lng')
             point_count = int(data.get('point_count', 5))
 
             if point_count < 2 or point_count > 20:
                 return JsonResponse({'error': 'point_count phải nằm trong khoảng [2, 20]'}, status=400)
-            
-            start_location = get_location_by_id(request.user, start_id)
-            end_location = get_location_by_id(request.user, end_id)
-            
+
+            # Build lightweight location-like objects for GPS points
+            class _GpsLoc:
+                def __init__(self, lat, lng, name='Vị trí GPS'):
+                    self.id        = None
+                    self.latitude  = float(lat)
+                    self.longitude = float(lng)
+                    self.name      = name
+
+            # Resolve start
+            if start_id and start_id != '__gps__':
+                start_location = get_location_by_id(request.user, start_id)
+            elif start_lat is not None and start_lng is not None:
+                start_location = _GpsLoc(start_lat, start_lng, 'Vị trí hiện tại (xuất phát)')
+            else:
+                start_location = None
+
+            # Resolve end
+            if end_id and end_id != '__gps__':
+                end_location = get_location_by_id(request.user, end_id)
+            elif end_lat is not None and end_lng is not None:
+                end_location = _GpsLoc(end_lat, end_lng, 'Vị trí hiện tại (đích)')
+            else:
+                end_location = None
+
             if not start_location or not end_location:
                 return JsonResponse({'error': 'Vị trí không hợp lệ'}, status=400)
 
-            if start_location.id == end_location.id:
+            # Prevent same point (only if both are DB locations with ids)
+            if (getattr(start_location, 'id', None) and
+                    getattr(end_location, 'id', None) and
+                    start_location.id == end_location.id):
                 return JsonResponse({'error': 'Điểm xuất phát và điểm đích phải khác nhau'}, status=400)
-            
+
             analysis = analyze_route_weather(start_location, end_location, point_count)
-            
+
             return JsonResponse({
                 'geometry': analysis['geometry'],
                 'distance': analysis['distance'],
@@ -366,11 +394,36 @@ class RouteCreateAPIView(View):
             start_id = data.get('start_id')
             end_id = data.get('end_id')
             
-            start_location = get_location_by_id(request.user, start_id)
-            end_location = get_location_by_id(request.user, end_id)
+            # Additional GPS coordinates if IDs are missing
+            start_lat = data.get('start_lat')
+            start_lng = data.get('start_lng')
+            end_lat = data.get('end_lat')
+            end_lng = data.get('end_lng')
+
+            # Resolve start location
+            if start_id and start_id != '__gps__':
+                start_location = get_location_by_id(request.user, start_id)
+            elif start_lat is not None and start_lng is not None:
+                # Create a new saved location for this GPS point automatically
+                from weather.services.gis_utils import create_user_location
+                loc_name = f"Vị trí GPS ({float(start_lat):.4f}, {float(start_lng):.4f})"
+                start_location = create_user_location(request.user, start_lat, start_lng, loc_name)
+            else:
+                start_location = None
+
+            # Resolve end location
+            if end_id and end_id != '__gps__':
+                end_location = get_location_by_id(request.user, end_id)
+            elif end_lat is not None and end_lng is not None:
+                # Create a new saved location for this GPS point automatically
+                from weather.services.gis_utils import create_user_location
+                loc_name = f"Vị trí GPS ({float(end_lat):.4f}, {float(end_lng):.4f})"
+                end_location = create_user_location(request.user, end_lat, end_lng, loc_name)
+            else:
+                end_location = None
             
             if not start_location or not end_location:
-                return JsonResponse({'error': 'Vị trí không hợp lệ'}, status=400)
+                return JsonResponse({'error': 'Vị trí không hợp lệ hoặc thiếu thông tin toạ độ'}, status=400)
             
             route = Route.objects.create(
                 user=request.user,

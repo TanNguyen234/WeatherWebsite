@@ -728,6 +728,110 @@
     overflow-y: auto;
 }
 
+/* ── Forms ───────────────────────────────────────────────────── */
+.admin-form-group {
+    margin-bottom: 1.25rem;
+}
+
+.admin-label {
+    display: block;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--adm-text);
+    margin-bottom: .45rem;
+}
+
+.admin-required {
+    color: var(--adm-red);
+    margin-left: 2px;
+}
+
+.admin-input,
+.admin-textarea {
+    width: 100%;
+    padding: .65rem .9rem;
+    background: var(--adm-surface2);
+    border: 1px solid var(--adm-border);
+    border-radius: var(--adm-radius-sm);
+    color: var(--adm-text);
+    font-size: .85rem;
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color .15s, box-shadow .15s;
+}
+
+.admin-input:focus,
+.admin-textarea:focus {
+    border-color: var(--adm-accent);
+    box-shadow: 0 0 0 3px rgba(93, 139, 245, 0.15);
+}
+
+.admin-input::placeholder,
+.admin-textarea::placeholder {
+    color: var(--adm-text-muted);
+}
+
+.admin-input--readonly {
+    background: rgba(0,0,0,.2);
+    cursor: not-allowed;
+    color: var(--adm-text-muted);
+}
+
+.admin-textarea {
+    resize: vertical;
+    min-height: 120px;
+    line-height: 1.5;
+}
+
+.admin-help {
+    display: block;
+    font-size: .75rem;
+    color: var(--adm-text-muted);
+    margin-top: .4rem;
+}
+
+.admin-form-row {
+    display: flex;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.admin-check-label {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    cursor: pointer;
+    font-size: .85rem;
+    color: var(--adm-text);
+}
+.admin-check-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.admin-form-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: .75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--adm-border);
+}
+
+/* ── Specific Overrides ──────────────────────────────────────── */
+.admin-user-chip-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    padding: .15rem .35rem;
+    border-radius: var(--adm-radius-sm);
+    transition: background .15s;
+}
+.admin-user-chip-link:hover {
+    background: var(--adm-surface2);
+}
+
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 768px) {
     .admin-topnav { display: none; }

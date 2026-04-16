@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Link không hợp lệ – WeatherGIS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="verify-icon">❌</div>
+            <h2>Link xác thực không hợp lệ</h2>
+            <p>{{ reason }}</p>
+        </div>
+
+        <div class="alert alert-error">
+            Link xác thực đã hết hạn, đã được sử dụng, hoặc không hợp lệ.
+        </div>
+
+        {% if show_resend %}
+        <form method="post" action="{% url 'resend-verification' %}" class="resend-form">
+            {% csrf_token %}
+            {% if user_id %}
+            <input type="hidden" name="user_id" value="{{ user_id }}">
+            {% endif %}
+            <button type="submit" class="btn btn-primary btn-block">Gửi lại email xác thực</button>
+        </form>
+        {% endif %}
+
+        <div class="auth-footer">
+            <p><a href="{% url 'register' %}">Đăng ký tài khoản mới</a></p>
+            <p><a href="{% url 'login' %}">Quay lại đăng nhập</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

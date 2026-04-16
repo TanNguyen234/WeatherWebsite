@@ -80,6 +80,7 @@
                     <td>
                         <a href="{% url 'adminpanel:user-detail' row.user.pk %}" class="admin-btn admin-btn--sm admin-btn--ghost">Chi tiết</a>
                         {% if row.user.pk != request.user.pk %}
+                        <a href="{% url 'adminpanel:user-edit' row.user.pk %}" class="admin-btn admin-btn--sm admin-btn--primary">🔑 Phân quyền</a>
                         <button
                             class="admin-btn admin-btn--sm admin-btn--toggle {% if row.user.is_active %}admin-btn--warn{% else %}admin-btn--success{% endif %}"
                             data-user-id="{{ row.user.pk }}"

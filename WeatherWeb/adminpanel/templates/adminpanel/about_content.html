@@ -1,0 +1,135 @@
+{% extends "adminpanel/base_admin.html" %}
+{% load static %}
+
+{% block title %}Quản lý trang Giới thiệu – Admin WeatherGIS{% endblock %}
+{% block page_title %}Nội dung trang Giới thiệu{% endblock %}
+{% block page_subtitle %}{{ blocks|length }} khối nội dung{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'adminpanel:about-content-create' %}" class="admin-btn admin-btn--primary">+ Thêm khối mới</a>
+<a href="{% url 'about' %}" target="_blank" class="admin-btn admin-btn--ghost">👁 Xem trang About</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="admin-card">
+    <div class="admin-card-body admin-card-body--flush">
+        <table class="admin-table admin-table--hover" id="about-blocks-table">
+            <thead>
+                <tr>
+                    <th style="width:40px">⬆⬇</th>
+                    <th>Thứ tự</th>
+                    <th>Key</th>
+                    <th>Tiêu đề</th>
+                    <th>Nội dung (preview)</th>
+                    <th>Hiển thị</th>
+                    <th>Cập nhật</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="sortable-blocks">
+                {% for block in blocks %}
+                <tr class="about-block-row {% if not block.is_visible %}admin-row--muted{% endif %}"
+                    data-id="{{ block.pk }}" data-order="{{ block.order }}">
+                    <td class="drag-handle" style="cursor:grab; text-align:center; color:#aaa;">⠿</td>
+                    <td class="admin-text-center admin-text-muted">{{ block.order }}</td>
+                    <td><code class="about-key">{{ block.key }}</code></td>
+                    <td><strong>{{ block.title }}</strong></td>
+                    <td class="admin-text-muted" style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        {{ block.body|truncatechars:80 }}
+                    </td>
+                    <td class="admin-text-center">
+                        {% if block.is_visible %}
+                            <span class="admin-badge admin-badge--green">Hiện</span>
+                        {% else %}
+                            <span class="admin-badge admin-badge--gray">Ẩn</span>
+                        {% endif %}
+                    </td>
+                    <td class="admin-text-muted admin-text-sm">
+                        {{ block.updated_at|date:"d/m/Y H:i" }}<br>
+                        {% if block.updated_by %}<em>{{ block.updated_by.username }}</em>{% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'adminpanel:about-content-edit' block.pk %}"
+                           class="admin-btn admin-btn--sm admin-btn--primary">Chỉnh sửa</a>
+                        <form method="post" action="{% url 'adminpanel:about-content-delete' block.pk %}"
+                              style="display:inline;"
+                              onsubmit="return confirm('Xoá khối nội dung \"{{ block.title }}\"?');">
+                            {% csrf_token %}
+                            <button type="submit" class="admin-btn admin-btn--sm admin-btn--warn">Xoá</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="admin-table-empty">
+                        Chưa có khối nội dung nào.
+                        <a href="{% url 'adminpanel:about-content-create' %}">Thêm ngay</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Simple drag-and-drop reorder using vanilla JS
+(function() {
+    const tbody = document.getElementById('sortable-blocks');
+    if (!tbody) return;
+
+    let dragging = null;
+
+    tbody.querySelectorAll('.about-block-row').forEach(function(row) {
+        row.draggable = true;
+
+        row.addEventListener('dragstart', function(e) {
+            dragging = row;
+            row.style.opacity = '0.5';
+        });
+        row.addEventListener('dragend', function() {
+            row.style.opacity = '';
+            dragging = null;
+            _saveOrder();
+        });
+        row.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            if (dragging && dragging !== row) {
+                const rect = row.getBoundingClientRect();
+                const mid = rect.top + rect.height / 2;
+                if (e.clientY < mid) {
+                    tbody.insertBefore(dragging, row);
+                } else {
+                    tbody.insertBefore(dragging, row.nextSibling);
+                }
+            }
+        });
+    });
+
+    function _saveOrder() {
+        const rows = tbody.querySelectorAll('.about-block-row');
+        const order = [];
+        rows.forEach(function(r, idx) {
+            order.push({ id: parseInt(r.dataset.id), order: idx });
+        });
+
+        fetch("{% url 'adminpanel:about-content-reorder' %}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': _csrfToken() },
+            body: JSON.stringify({ order: order }),
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (!data.success) console.warn('Reorder error:', data);
+        });
+    }
+
+    function _csrfToken() {
+        var cookie = document.cookie.split(';').find(function(c) { return c.trim().startsWith('csrftoken='); });
+        return cookie ? cookie.split('=')[1] : '';
+    }
+}());
+</script>
+{% endblock %}

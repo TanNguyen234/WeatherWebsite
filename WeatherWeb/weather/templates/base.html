@@ -38,7 +38,8 @@
 
         <div class="auth-links">
             {% if user.is_authenticated %}
-                <span class="user-greeting">{{ user.username }}</span>
+                <span class="user-greeting">Xin chào, <strong>{{ user.username }}</strong></span>
+                <a href="{% url 'profile' %}" class="btn-login">Hồ sơ</a>
                 <a href="{% url 'logout' %}" class="btn-logout">Đăng xuất</a>
             {% else %}
                 <a href="{% url 'login' %}" class="btn-login">Đăng nhập</a>

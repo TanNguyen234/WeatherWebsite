@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Route Page – Road route + weather analysis
  * Uses backend bulk endpoint /api/route/ for geometry + sampled weather points.
  */
@@ -73,8 +73,16 @@
         var select = e.target;
         var option = select.options[select.selectedIndex];
         var coordId = select.id === 'start-location' ? 'start-coords' : 'end-coords';
+        var which   = select.id === 'start-location' ? 'start' : 'end';
 
-        if (option && option.value) {
+        if (option && option.value === '__gps__') {
+            var gps = window._gpsCoords && window._gpsCoords[which];
+            if (gps) {
+                document.getElementById(coordId).textContent = 'GPS: ' + gps.lat.toFixed(5) + ', ' + gps.lng.toFixed(5);
+            } else {
+                document.getElementById(coordId).textContent = 'Chờ GPS...';
+            }
+        } else if (option && option.dataset.lat) {
             document.getElementById(coordId).textContent = UIHelpers.formatCoords(parseFloat(option.dataset.lat), parseFloat(option.dataset.lng));
         } else {
             document.getElementById(coordId).textContent = '';
@@ -98,13 +106,37 @@
             UIHelpers.showToast('Vui lòng chọn cả điểm xuất phát và điểm đích', 'error');
             return;
         }
-        if (startSel.value === endSel.value) {
+        if (startSel.value !== '__gps__' && endSel.value !== '__gps__' && startSel.value === endSel.value) {
             UIHelpers.showToast('Điểm xuất phát và điểm đích phải khác nhau', 'error');
             return;
         }
 
-        var startId = parseInt(startSel.value, 10);
-        var endId = parseInt(endSel.value, 10);
+        // Build route payload — use raw lat/lng for GPS selections
+        var payload = { point_count: pointCount };
+
+        if (startSel.value === '__gps__') {
+            var sg = window._gpsCoords && window._gpsCoords.start;
+            if (!sg) {
+                UIHelpers.showToast('Vui lòng nhấn 📍 để lấy vị trí GPS trước', 'error');
+                return;
+            }
+            payload.start_lat = sg.lat;
+            payload.start_lng = sg.lng;
+        } else {
+            payload.start_id = parseInt(startSel.value, 10);
+        }
+
+        if (endSel.value === '__gps__') {
+            var eg = window._gpsCoords && window._gpsCoords.end;
+            if (!eg) {
+                UIHelpers.showToast('Vui lòng nhấn 📍 để lấy vị trí GPS cho điểm đích', 'error');
+                return;
+            }
+            payload.end_lat = eg.lat;
+            payload.end_lng = eg.lng;
+        } else {
+            payload.end_id = parseInt(endSel.value, 10);
+        }
 
         showResultsPanel();
         UIHelpers.showLoading(document.getElementById('route-tbody'));
@@ -112,18 +144,19 @@
         setRouteStatus('Đang phân tích tuyến đường và thời tiết...', 'info');
 
         try {
-            var analysis = await WeatherApi.analyzeRouteWeather({
-                start_id: startId,
-                end_id: endId,
-                point_count: pointCount
-            });
+            var analysis = await WeatherApi.analyzeRouteWeather(payload);
 
             state.currentRoute = {
-                startId: startId,
-                endId: endId,
+                startId: payload.start_id || null,
+                endId: payload.end_id || null,
+                startLat: payload.start_lat || null,
+                startLng: payload.start_lng || null,
+                endLat: payload.end_lat || null,
+                endLng: payload.end_lng || null,
                 pointCount: pointCount,
                 analysis: analysis
             };
+
 
             setRouteStatus('Đang hiển thị tuyến đường...', 'info');
             clearRouteLayers();
@@ -176,7 +209,11 @@
             await WeatherApi.post('/api/routes/', {
                 name: name,
                 start_id: state.currentRoute.startId,
-                end_id: state.currentRoute.endId
+                end_id: state.currentRoute.endId,
+                start_lat: state.currentRoute.startLat,
+                start_lng: state.currentRoute.startLng,
+                end_lat: state.currentRoute.endLat,
+                end_lng: state.currentRoute.endLng
             });
             UIHelpers.showToast('Đã lưu tuyến đường!', 'success');
             location.reload();

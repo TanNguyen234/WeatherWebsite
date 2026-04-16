@@ -5,14 +5,14 @@ from io import StringIO
 
 
 EXPORT_HEADERS = [
-    "time",
-    "hour_offset",
-    "api_temperature",
-    "api_humidity",
-    "api_wind_speed",
-    "predicted_temperature",
-    "predicted_humidity",
-    "predicted_wind_speed",
+    "Thời gian",
+    "Giờ dự báo",
+    "Nhiệt độ API (°C)",
+    "Độ ẩm API (%)",
+    "Tốc độ gió API (m/s)",
+    "Nhiệt độ dự đoán (°C)",
+    "Độ ẩm dự đoán (%)",
+    "Tốc độ gió dự đoán (m/s)",
 ]
 
 
@@ -21,14 +21,14 @@ def build_export_rows(rows: list[dict]) -> list[dict]:
     for row in rows:
         export_rows.append(
             {
-                "time": row.get("timestamp"),
-                "hour_offset": row.get("hour_offset"),
-                "api_temperature": row.get("api_temperature"),
-                "api_humidity": row.get("api_humidity"),
-                "api_wind_speed": row.get("api_wind_speed"),
-                "predicted_temperature": row.get("ai_temperature"),
-                "predicted_humidity": row.get("ai_humidity"),
-                "predicted_wind_speed": row.get("ai_wind_speed"),
+                "Thời gian":                   row.get("timestamp"),
+                "Giờ dự báo":                  row.get("hour_offset"),
+                "Nhiệt độ API (°C)":           row.get("api_temperature"),
+                "Độ ẩm API (%)":               row.get("api_humidity"),
+                "Tốc độ gió API (m/s)":        row.get("api_wind_speed"),
+                "Nhiệt độ dự đoán (°C)":       row.get("ai_temperature"),
+                "Độ ẩm dự đoán (%)":           row.get("ai_humidity"),
+                "Tốc độ gió dự đoán (m/s)":   row.get("ai_wind_speed"),
             }
         )
     return export_rows

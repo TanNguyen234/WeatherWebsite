@@ -104,3 +104,44 @@
         font-size: 1.3rem;
     }
 }
+
+/* Password Toggle Styles */
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-wrapper .form-control {
+    padding-right: 2.8rem; /* Make space for the icon */
+}
+
+.password-toggle {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: var(--transition);
+    z-index: 5;
+    opacity: 0.6;
+}
+
+.password-toggle:hover {
+    opacity: 1;
+    color: var(--primary);
+    background: rgba(37, 99, 235, 0.05);
+}
+
+.password-toggle svg {
+    width: 20px;
+    height: 20px;
+}

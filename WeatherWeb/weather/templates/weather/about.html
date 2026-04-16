@@ -14,70 +14,61 @@
         <p>Nền tảng hỗ trợ bạn xem bản đồ và theo dõi thông tin địa lý theo cách trực quan, dễ dùng.</p>
     </div>
 
-    <section class="about-section">
-        <div class="card">
-            <div class="card-header">
-                <h3>Hệ thống này dùng để làm gì?</h3>
+    {% if blocks %}
+        {% for block in blocks %}
+        <section class="about-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3>{{ block.title }}</h3>
+                </div>
+                <div class="data-type-content">
+                    {% if block.body %}
+                        {% for line in block.body.splitlines %}
+                            {% if line.strip %}
+                            <p>{{ line }}</p>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </div>
             </div>
-            <div class="data-type-content">
-                <p>WeatherGIS giúp bạn làm việc với dữ liệu địa lý ngay trên bản đồ:</p>
-                <ul>
-                    <li>Xem vị trí trực tiếp theo tọa độ trên bản đồ.</li>
-                    <li>Lưu các điểm quan trọng để dùng lại khi cần.</li>
-                    <li>Theo dõi tuyến đường giữa hai địa điểm.</li>
-                    <li>So sánh thông tin theo từng khu vực để hỗ trợ ra quyết định.</li>
-                </ul>
+        </section>
+        {% endfor %}
+    {% else %}
+        {# Fallback when no content has been seeded yet #}
+        <section class="about-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Hệ thống này dùng để làm gì?</h3>
+                </div>
+                <div class="data-type-content">
+                    <p>WeatherGIS giúp bạn làm việc với dữ liệu địa lý ngay trên bản đồ:</p>
+                    <ul>
+                        <li>Xem vị trí trực tiếp theo tọa độ trên bản đồ.</li>
+                        <li>Lưu các điểm quan trọng để dùng lại khi cần.</li>
+                        <li>Theo dõi tuyến đường giữa hai địa điểm.</li>
+                        <li>So sánh thông tin theo từng khu vực để hỗ trợ ra quyết định.</li>
+                    </ul>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="about-section">
-        <div class="card">
-            <div class="card-header">
-                <h3>Lợi ích dành cho người dùng</h3>
-            </div>
-            <div class="reasons-grid">
-                <div class="reason-item">
-                    <h4>Nắm thông tin nhanh</h4>
-                    <p>Xem dữ liệu trực quan trên bản đồ để hiểu khu vực bạn quan tâm chỉ trong vài bước.</p>
+        <section class="about-section">
+            <div class="card highlight-card">
+                <div class="card-header">
+                    <h3>Bắt đầu quản lý nội dung</h3>
                 </div>
-                <div class="reason-item">
-                    <h4>Dễ theo dõi</h4>
-                    <p>Lưu lại các địa điểm thường dùng để tiết kiệm thời gian cho lần truy cập sau.</p>
-                </div>
-                <div class="reason-item">
-                    <h4>Hỗ trợ quyết định</h4>
-                    <p>So sánh thông tin giữa các điểm giúp bạn chọn phương án phù hợp hơn.</p>
-                </div>
-                <div class="reason-item">
-                    <h4>Thân thiện với mọi người</h4>
-                    <p>Giao diện đơn giản, không cần kiến thức chuyên sâu vẫn có thể sử dụng hiệu quả.</p>
+                <div class="data-type-content">
+                    <p>Nội dung trang này chưa được cấu hình. Admin có thể thêm và chỉnh sửa nội dung tại:</p>
+                    <div class="principle-box">
+                        Truy cập <a href="/panel/about/">/panel/about/</a> → Thêm khối nội dung → Nội dung sẽ hiển thị tại đây.
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <section class="about-section">
-        <div class="card highlight-card">
-            <div class="card-header">
-                <h3>Bạn có thể làm gì trên hệ thống?</h3>
-            </div>
-            <div class="data-type-content">
-                <ul>
-                    <li>Khám phá bản đồ và chọn đúng vị trí cần theo dõi.</li>
-                    <li>Lưu địa điểm cá nhân để quản lý dữ liệu gọn gàng.</li>
-                    <li>Xem và so sánh thông tin giữa nhiều điểm địa lý khác nhau.</li>
-                    <li>Quan sát tuyến đường giữa các vị trí để phục vụ kế hoạch di chuyển.</li>
-                </ul>
-            </div>
-            <div class="principle-box">
-                Mục tiêu của WeatherGIS là giúp bạn hiểu dữ liệu địa lý nhanh hơn, rõ ràng hơn và dễ ứng dụng trong công việc hằng ngày.
-            </div>
-        </div>
-    </section>
+        </section>
+    {% endif %}
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<!-- Không cần JS phức tạp cho trang Giới thiệu -->
+{# Không cần JS phức tạp cho trang Giới thiệu #}
 {% endblock %}
