@@ -14,13 +14,14 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env')
+load_dotenv(dotenv_path=env_path)
 
 if os.name == 'nt':
     # Lấy đường dẫn gốc của venv
     VENV_BASE = os.environ.get('VIRTUAL_ENV')
     
-    # Nếu không tìm thấy biến VIRTUAL_ENV, ta dùng đường dẫn tuyệt đối bạn đã cung cấp
+    # Nếu không tìm thấy biến VIRTUAL_ENV, ta dùng đường dẫn tuyệt đối 
     if not VENV_BASE:
         OSGEO_PATH = os.environ.get('OSGEO_PATH', r'D:\Project\WeatherWebsite\venv\Lib\site-packages\osgeo')
     else:
@@ -29,11 +30,10 @@ if os.name == 'nt':
     # Thêm đường dẫn vào PATH của hệ thống
     os.environ['PATH'] = OSGEO_PATH + ';' + os.environ['PATH']
     
-    # Cấu hình PROJ_LIB (rất quan trọng cho GIS)
+    # Cấu hình PROJ_LIB 
     os.environ['PROJ_LIB'] = os.path.join(OSGEO_PATH, 'data', 'proj')
 
-    # THÊM 2 DÒNG NÀY ĐỂ FIX LỖI "Could not find the GDAL library"
-    GDAL_LIBRARY_PATH = os.path.join(OSGEO_PATH, 'gdal.dll') # Hoặc gdal311.dll tùy tên file thực tế
+    GDAL_LIBRARY_PATH = os.path.join(OSGEO_PATH, 'gdal.dll') 
     GEOS_LIBRARY_PATH = os.path.join(OSGEO_PATH, 'geos_c.dll')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
