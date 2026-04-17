@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Email đã thay đổi – WeatherGIS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="verify-icon"></div>
+            <h2>Email đã được cập nhật!</h2>
+            <p>Địa chỉ email của bạn đã được thay đổi thành <strong>{{ new_email }}</strong>.</p>
+        </div>
+        <div class="alert alert-success">Thay đổi có hiệu lực ngay lập tức.</div>
+        <a href="{% url 'map' %}" class="btn btn-primary btn-block">Về trang bản đồ</a>
+    </div>
+</div>
+{% endblock %}

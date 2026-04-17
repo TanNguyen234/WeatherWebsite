@@ -24,15 +24,22 @@
             <form id="route-form">
                 <div class="form-group">
                     <label>Điểm xuất phát (A)</label>
-                    <select id="start-location" class="form-control" required>
-                        <option value="">-- Chọn điểm xuất phát --</option>
-                        {% for loc in locations %}
-                        <option value="{{ loc.id }}" data-lat="{{ loc.latitude }}" data-lng="{{ loc.longitude }}">
-                            {{ loc.name|default:"Chưa đặt tên" }}
-                        </option>
-                        {% endfor %}
-                    </select>
+                    <div class="location-select-row">
+                        <select id="start-location" class="form-control" required>
+                            <option value="">-- Chọn điểm xuất phát --</option>
+                            <option value="__gps__" data-gps="true">Vị trí hiện tại của tôi</option>
+                            {% for loc in locations %}
+                            <option value="{{ loc.id }}" data-lat="{{ loc.latitude }}" data-lng="{{ loc.longitude }}">
+                                {{ loc.name|default:"Chưa đặt tên" }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="btn btn-sm btn-gps" id="gps-start-btn" title="Dùng vị trí GPS hiện tại">
+                            GPS
+                        </button>
+                    </div>
                     <div class="coord-display" id="start-coords"></div>
+                    <div class="gps-status" id="gps-start-status" style="display:none; font-size: 13px; margin-top: 5px;"></div>
                 </div>
 
                 <div class="route-direction">
@@ -41,15 +48,22 @@
 
                 <div class="form-group">
                     <label>Điểm đích (B)</label>
-                    <select id="end-location" class="form-control" required>
-                        <option value="">-- Chọn điểm đích --</option>
-                        {% for loc in locations %}
-                        <option value="{{ loc.id }}" data-lat="{{ loc.latitude }}" data-lng="{{ loc.longitude }}">
-                            {{ loc.name|default:"Chưa đặt tên" }}
-                        </option>
-                        {% endfor %}
-                    </select>
+                    <div class="location-select-row">
+                        <select id="end-location" class="form-control" required>
+                            <option value="">-- Chọn điểm đích --</option>
+                            <option value="__gps__" data-gps="true">Vị trí hiện tại của tôi</option>
+                            {% for loc in locations %}
+                            <option value="{{ loc.id }}" data-lat="{{ loc.latitude }}" data-lng="{{ loc.longitude }}">
+                                {{ loc.name|default:"Chưa đặt tên" }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="btn btn-sm btn-gps" id="gps-end-btn" title="Dùng vị trí GPS hiện tại">
+                            GPS
+                        </button>
+                    </div>
                     <div class="coord-display" id="end-coords"></div>
+                    <div class="gps-status" id="gps-end-status" style="display:none; font-size: 13px; margin-top: 5px;"></div>
                 </div>
 
                 <div class="form-group">
@@ -62,7 +76,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-block">
+                <button type="submit" class="btn btn-primary btn-block" id="analyze-route-btn">
                     Phân tích thời tiết tuyến đường
                 </button>
             </form>
@@ -72,8 +86,8 @@
                 <h3>Tuyến đường đã lưu</h3>
                 <ul class="route-list" id="route-list">
                     {% for route in routes %}
-                    <li class="route-item" data-id="{{ route.id }}" 
-                        data-start="{{ route.start_location.id }}" 
+                    <li class="route-item" data-id="{{ route.id }}"
+                        data-start="{{ route.start_location.id }}"
                         data-end="{{ route.end_location.id }}">
                         <span class="route-name">{{ route.name }}</span>
                         <span class="route-path">{{ route.start_location.name }} → {{ route.end_location.name }}</span>
@@ -93,23 +107,54 @@
         </div>
 
         <!-- Route Results -->
-        <div class="route-results card" id="route-results" style="display: none;">
+        <div class="route-results card route-results--hidden" id="route-results">
             <div class="card-header flex-between">
                 <div>
-                    <h3 style="margin:0 0 .25rem">Dữ liệu thời tiết tuyến đường</h3>
+                    <h3 class="route-results-title">Dữ liệu thời tiết tuyến đường</h3>
                     <div id="route-status" class="route-status route-status--info"></div>
                 </div>
                 <button class="btn btn-sm btn-secondary" id="save-route-btn">Lưu tuyến đường</button>
             </div>
+
+            <div class="route-summary" id="route-summary">
+                <div class="summary-card">
+                    <span class="summary-label">Đoạn thời tiết xấu nhất</span>
+                    <strong id="summary-worst">--</strong>
+                </div>
+                <div class="summary-card">
+                    <span class="summary-label">Nhiệt độ trung bình</span>
+                    <strong id="summary-temp">--</strong>
+                </div>
+                <div class="summary-card">
+                    <span class="summary-label">Gió trung bình</span>
+                    <strong id="summary-wind">--</strong>
+                </div>
+                <div class="summary-card">
+                    <span class="summary-label">Độ tin cậy dữ liệu</span>
+                    <strong id="summary-success">--</strong>
+                </div>
+            </div>
+
+            <div class="route-legend" id="route-legend">
+                <span class="legend-title">Mức độ thời tiết theo đoạn:</span>
+                <span class="legend-chip legend-chip--low">Ổn định</span>
+                <span class="legend-chip legend-chip--medium">Cần chú ý</span>
+                <span class="legend-chip legend-chip--high">Rủi ro cao</span>
+                <span class="legend-note">Chỉ số dựa trên mưa, gió và loại thời tiết</span>
+            </div>
+
             <div class="table-container">
                 <table class="data-table">
                     <thead>
                         <tr>
                             <th>#</th>
                             <th>Vị trí</th>
-                            <th>Nhiệt độ</th>
-                            <th>Độ ẩm</th>
-                            <th>Gió</th>
+                            <th>Nhiệt độ (°C)</th>
+                            <th>Độ ẩm (%)</th>
+                            <th>Gió (m/s)</th>
+                            <th>Mưa 1h (mm)</th>
+                            <th>Nguồn</th>
+                            <th>Trạng thái</th>
                             <th>Điều kiện</th>
                         </tr>
                     </thead>
@@ -134,4 +179,72 @@
 
 {% block extra_js %}
 <script src="{% static 'js/pages/route.js' %}"></script>
+<script>
+/* ── GPS Location Picker ───────────────────────────────────────────── */
+(function () {
+    'use strict';
+
+    // Stores GPS coordinates resolved for start/end when user picks GPS option
+    window._gpsCoords = { start: null, end: null };
+
+    function resolveGps(which, statusEl, selectEl) {
+        if (!navigator.geolocation) {
+            statusEl.textContent = 'Trình duyệt không hỗ trợ GPS.';
+            statusEl.style.display = 'block';
+            return;
+        }
+        statusEl.textContent = 'Đang xác định vị trí...';
+        statusEl.style.display = 'block';
+        statusEl.style.color = '#888';
+
+        navigator.geolocation.getCurrentPosition(
+            function (pos) {
+                var lat = pos.coords.latitude;
+                var lng = pos.coords.longitude;
+                window._gpsCoords[which] = { lat: lat, lng: lng };
+                statusEl.textContent = 'Đã lấy: ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+                statusEl.style.color = '#1a73e8';
+
+                // Auto-select the "Vị trí hiện tại" option
+                for (var i = 0; i < selectEl.options.length; i++) {
+                    if (selectEl.options[i].value === '__gps__') {
+                        selectEl.selectedIndex = i;
+                        selectEl.dispatchEvent(new Event('change'));
+                        break;
+                    }
+                }
+            },
+            function (err) {
+                statusEl.textContent = 'Không lấy được vị trí: ' + err.message;
+                statusEl.style.color = '#e53935';
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    }
+
+    document.getElementById('gps-start-btn').addEventListener('click', function () {
+        resolveGps('start', document.getElementById('gps-start-status'), document.getElementById('start-location'));
+    });
+
+    document.getElementById('gps-end-btn').addEventListener('click', function () {
+        resolveGps('end', document.getElementById('gps-end-status'), document.getElementById('end-location'));
+    });
+
+    // When dropdown changes to __gps__ but no coords yet, trigger resolution
+    ['start-location', 'end-location'].forEach(function (id) {
+        var which = id === 'start-location' ? 'start' : 'end';
+        document.getElementById(id).addEventListener('change', function () {
+            if (this.value === '__gps__' && !window._gpsCoords[which]) {
+                var statusId = which === 'start' ? 'gps-start-status' : 'gps-end-status';
+                resolveGps(which, document.getElementById(statusId), this);
+            }
+        });
+    });
+
+    // Auto-fetch location on load and set as Start Point
+    setTimeout(function() {
+        resolveGps('start', document.getElementById('gps-start-status'), document.getElementById('start-location'));
+    }, 500);
+}());
+</script>
 {% endblock %}

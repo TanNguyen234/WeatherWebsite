@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Hồ sơ cá nhân – WeatherGIS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/auth.css' %}">
+<style>
+    .profile-card {
+        max-width: 600px; /* Slightly wider than standard auth card */
+    }
+    .profile-info-grid {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: rgba(148, 163, 184, 0.05);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+    }
+    .info-label {
+        font-weight: 600;
+        color: var(--secondary);
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .info-value {
+        font-size: 1.05rem;
+        color: var(--text);
+    }
+    .role-badge {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-right: 0.5rem;
+    }
+    .role-badge--admin { background: #fee2e2; color: #b91c1c; }
+    .role-badge--staff { background: #dbeafe; color: #1e40af; }
+    .role-badge--user  { background: #f1f5f9; color: #475569; }
+
+    .profile-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    @media (max-width: 480px) {
+        .profile-info-grid {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card profile-card">
+        <div class="auth-header">
+            <h2>Hồ sơ cá nhân</h2>
+            <p>Thông tin tài khoản và bảo mật</p>
+        </div>
+
+        <div class="profile-info-grid">
+            <div class="info-label">Tên người dùng</div>
+            <div class="info-value">{{ target_user.username }}</div>
+
+            <div class="info-label">Email</div>
+            <div class="info-value">{{ target_user.email }}</div>
+
+            <div class="info-label">Vai trò</div>
+            <div class="info-value">
+                {% if target_user.is_superuser %}
+                    <span class="role-badge role-badge--admin">Quản trị viên hệ thống</span>
+                {% elif target_user.is_staff %}
+                    <span class="role-badge role-badge--staff">Nhân viên</span>
+                {% else %}
+                    <span class="role-badge role-badge--user">Người dùng</span>
+                {% endif %}
+                
+                {% if profile and profile.role != 'user' %}
+                    <span class="role-badge role-badge--staff">{{ profile.get_role_display }}</span>
+                {% endif %}
+            </div>
+
+            <div class="info-label">Ngày tham gia</div>
+            <div class="info-value">{{ target_user.date_joined|date:"d/m/Y" }}</div>
+        </div>
+
+        <div class="profile-actions">
+            <a href="{% url 'change-password' %}" class="btn btn-primary">
+                Đổi mật khẩu
+            </a>
+            <a href="{% url 'change-email' %}" class="btn btn-secondary">
+                Thay đổi địa chỉ Email
+            </a>
+            
+            {% if target_user.is_staff or target_user.is_superuser %}
+            <a href="{% url 'adminpanel:dashboard' %}" class="btn btn-secondary" style="border-color: #f59e0b; color: #d97706; margin-top: 1rem;">
+                ⚙ Quản lý hệ thống (Admin Panel)
+            </a>
+            {% endif %}
+        </div>
+
+        <div class="auth-footer">
+            <p><a href="{% url 'logout' %}" style="color: var(--danger);">Đăng xuất khỏi tài khoản</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "adminpanel/base_admin.html" %}
+{% load static %}
+
+{% block title %}
+{% if content_block %}Chỉnh sửa: {{ content_block.title }} – Admin WeatherGIS{% else %}Thêm khối nội dung – Admin WeatherGIS{% endif %}
+{% endblock %}
+
+{% block page_title %}
+{% if content_block %}Chỉnh sửa khối nội dung{% else %}Thêm khối nội dung mới{% endif %}
+{% endblock %}
+
+{% block page_subtitle %}
+{% if content_block %}{{ content_block.key }}{% else %}Trang Giới thiệu{% endif %}
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'adminpanel:about-content' %}" class="admin-btn admin-btn--ghost">← Quay lại danh sách</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="admin-card" style="max-width: 900px; margin: 0 auto;">
+    <div class="admin-card-header">
+        <h3 class="admin-card-title">
+            {% if content_block %}Thông tin khối nội dung{% else %}Tạo nội dung mới{% endif %}
+        </h3>
+    </div>
+    <div class="admin-card-body">
+
+        {% if errors %}
+        <div class="alert alert-error" style="margin-bottom: 1.5rem;">
+            <ul style="margin:0; padding-left:18px;">
+                {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <form method="post" class="admin-form">
+            {% csrf_token %}
+
+            <div class="admin-form-row">
+                {% if not content_block %}
+                <div class="admin-form-group" style="flex: 1; min-width: 300px;">
+                    <label class="admin-label" for="key">
+                        Định danh (Key) <span class="admin-required">*</span>
+                    </label>
+                    <input type="text" id="key" name="key"
+                           value="{{ form_data.key|default:'' }}"
+                           class="admin-input" required
+                           placeholder="Ví dụ: main_intro, section_why"
+                           pattern="[-a-z0-9_]+" title="Chỉ dùng chữ thường, số, gạch ngang, gạch dưới">
+                    <small class="admin-help">Định danh duy nhất dùng để truy xuất nội dung, không thể thay đổi sau khi tạo.</small>
+                </div>
+                {% else %}
+                <div class="admin-form-group" style="flex: 1; min-width: 300px;">
+                    <label class="admin-label">Định danh (Key)</label>
+                    <input type="text" class="admin-input admin-input--readonly" value="{{ content_block.key }}" readonly>
+                </div>
+                {% endif %}
+
+                <div class="admin-form-group" style="flex: 2; min-width: 300px;">
+                    <label class="admin-label" for="title">
+                        Tiêu đề hiển thị <span class="admin-required">*</span>
+                    </label>
+                    <input type="text" id="title" name="title"
+                           value="{{ form_data.title|default:'' }}"
+                           class="admin-input" required
+                           placeholder="Tiêu đề chính của phần nội dung này">
+                </div>
+            </div>
+
+            <div class="admin-form-group">
+                <label class="admin-label" for="body">Nội dung chi tiết</label>
+                <textarea id="body" name="body" class="admin-textarea" rows="12"
+                          placeholder="Nhập nội dung hiển thị. Hệ thống tự động chuyển các dòng mới thành đoạn văn.">{{ form_data.body|default:'' }}</textarea>
+                <div style="display: flex; justify-content: space-between; margin-top: 0.4rem;">
+                    <small class="admin-help">Hỗ trợ định dạng văn bản cơ bản qua xuống dòng.</small>
+                    <small class="admin-text-muted admin-text-sm" id="char-count">0 ký tự</small>
+                </div>
+            </div>
+
+            <div class="admin-form-row" style="align-items: flex-start; gap: 2rem;">
+                <div class="admin-form-group" style="flex: 0 0 160px;">
+                    <label class="admin-label" for="order">Thứ tự ưu tiên</label>
+                    <input type="number" id="order" name="order"
+                           value="{{ form_data.order|default:'0' }}"
+                           class="admin-input" min="0" max="999">
+                    <small class="admin-help">Số nhỏ hơn sẽ hiện trước.</small>
+                </div>
+
+                <div class="admin-form-group" style="padding-top: 2rem;">
+                    <label class="admin-check-label">
+                        <input type="checkbox" name="is_visible"
+                               {% if form_data.is_visible == 'on' or form_data.is_visible is True %}checked{% endif %}>
+                        <span><strong>Hiển thị công khai</strong> (Cho phép người dùng nhìn thấy khối này)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="admin-form-actions">
+                <button type="submit" class="admin-btn admin-btn--primary">
+                    <svg style="margin-right: 6px;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    {% if content_block %}Lưu nội dung{% else %}Tạo nội dung{% endif %}
+                </button>
+                <a href="{% url 'adminpanel:about-content' %}" class="admin-btn admin-btn--ghost">Hủy bỏ</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-resize and char count for textarea
+(function() {
+    var ta = document.getElementById('body');
+    var cc = document.getElementById('char-count');
+    if (!ta) return;
+
+    function update() {
+        // Resize
+        ta.style.height = 'auto';
+        ta.style.height = ta.scrollHeight + 'px';
+        // Count
+        if (cc) {
+            cc.textContent = ta.value.length + ' ký tự';
+        }
+    }
+
+    ta.addEventListener('input', update);
+    window.addEventListener('resize', update);
+    update();
+}());
+</script>
+{% endblock %}

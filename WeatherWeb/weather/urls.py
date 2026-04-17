@@ -6,7 +6,13 @@ from weather.views.compare import CompareView
 from weather.views.route import RouteView
 from weather.views.layers import LayersView
 from weather.views.about import AboutView
-from weather.views.auth import LoginView, RegisterView, LogoutView
+from weather.views.auth import (
+    LoginView, RegisterView, LogoutView,
+    EmailVerifyView, ResendVerificationView,
+    RegisterPendingView, ChangePasswordView,
+    ChangeEmailView, ChangeEmailConfirmView,
+    ProfileView,
+)
 from weather.views.api import (
     WeatherAPIView,
     LocationAPIView,
@@ -35,7 +41,14 @@ urlpatterns = [
     # Auth
     path('login/', LoginView.as_view(), name='login'),
     path('register/', RegisterView.as_view(), name='register'),
+    path('register/pending/', RegisterPendingView.as_view(), name='register-pending'),
     path('logout/', LogoutView.as_view(), name='logout'),
+    path('verify-email/<uidb64>/<token>/', EmailVerifyView.as_view(), name='email-verify'),
+    path('resend-verification/', ResendVerificationView.as_view(), name='resend-verification'),
+    path('change-password/', ChangePasswordView.as_view(), name='change-password'),
+    path('change-email/', ChangeEmailView.as_view(), name='change-email'),
+    path('confirm-email-change/<uidb64>/<token>/', ChangeEmailConfirmView.as_view(), name='confirm-email-change'),
+    path('profile/', ProfileView.as_view(), name='profile'),
 
     # API endpoints
     path('api/weather/', WeatherAPIView.as_view(), name='api-weather'),

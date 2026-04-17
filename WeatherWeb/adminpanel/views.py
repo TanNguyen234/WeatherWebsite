@@ -17,6 +17,7 @@ Architecture:
 from django.views import View
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -25,7 +26,7 @@ from django.conf import settings
 import os
 import requests
 
-from weather.models import UserLocation, Route
+from weather.models import UserLocation, Route, AboutContent
 from weather.services.layer_config import get_available_layers
 
 User = get_user_model()
@@ -199,6 +200,90 @@ class UserToggleActiveView(AdminBaseView):
 
 
 # ---------------------------------------------------------------------------
+# User Edit (Role / Permission assignment)
+# ---------------------------------------------------------------------------
+
+class UserEditView(AdminBaseView):
+    """Form to edit a user's role, is_staff, is_active flags."""
+
+    template_name = 'adminpanel/user_edit.html'
+
+    def get(self, request, user_id):
+        target_user = get_object_or_404(User, pk=user_id)
+        try:
+            profile = target_user.profile
+        except Exception:
+            profile = None
+        return render(request, self.template_name, {
+            'target_user': target_user,
+            'profile': profile,
+        })
+
+    def post(self, request, user_id):
+        target_user = get_object_or_404(User, pk=user_id)
+
+        # Guard: cannot edit own account via this form
+        if target_user == request.user:
+            return redirect('adminpanel:user-detail', user_id=user_id)
+
+        is_active  = request.POST.get('is_active') == 'on'
+        is_staff   = request.POST.get('is_staff') == 'on'
+        # Only superuser may set/unset superuser flag
+        is_superuser = target_user.is_superuser
+        if request.user.is_superuser:
+            is_superuser = request.POST.get('is_superuser') == 'on'
+
+        new_role = request.POST.get('role', 'user')
+        if new_role not in ('user', 'admin'):
+            new_role = 'user'
+
+        with transaction.atomic():
+            target_user.is_active    = is_active
+            target_user.is_staff     = is_staff
+            target_user.is_superuser = is_superuser
+            target_user.save(update_fields=['is_active', 'is_staff', 'is_superuser'])
+
+            try:
+                from weather.models import UserProfile
+                profile, _ = UserProfile.objects.get_or_create(
+                    user=target_user,
+                    defaults={'role': new_role},
+                )
+                profile.role = new_role
+                profile.save(update_fields=['role'])
+            except Exception:
+                pass
+
+        return redirect('adminpanel:user-detail', user_id=user_id)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class UserRoleUpdateView(AdminBaseView):
+    """Quick AJAX role toggle from the user list table."""
+
+    def post(self, request, user_id):
+        target_user = get_object_or_404(User, pk=user_id)
+
+        if target_user == request.user:
+            return JsonResponse({'error': 'Không thể thạy đổi quyền của chính mình'}, status=400)
+
+        new_role = request.POST.get('role', 'user')
+        if new_role not in ('user', 'admin'):
+            return JsonResponse({'error': 'Vai trò không hợp lệ'}, status=400)
+
+        with transaction.atomic():
+            from weather.models import UserProfile
+            profile, _ = UserProfile.objects.get_or_create(user=target_user)
+            profile.role = new_role
+            profile.save(update_fields=['role'])
+            # Sync is_staff with admin role
+            target_user.is_staff = (new_role == 'admin')
+            target_user.save(update_fields=['is_staff'])
+
+        return JsonResponse({'success': True, 'role': new_role})
+
+
+# ---------------------------------------------------------------------------
 # Locations
 # ---------------------------------------------------------------------------
 
@@ -301,6 +386,12 @@ class APIHealthCheckView(AdminBaseView):
 
 
 # ---------------------------------------------------------------------------
+# Profile
+# ---------------------------------------------------------------------------
+
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
@@ -379,3 +470,146 @@ def _check_api_status() -> dict:
         'owm_error':      owm['error'],
         'has_key':        has_key,
     }
+
+
+# ---------------------------------------------------------------------------
+# About Page CMS
+# ---------------------------------------------------------------------------
+
+class AboutContentListView(AdminBaseView):
+    """List all About page content blocks for admin management."""
+
+    template_name = 'adminpanel/about_content.html'
+
+    def get(self, request):
+        blocks = AboutContent.objects.order_by('order', 'key')
+        return render(request, self.template_name, {'blocks': blocks})
+
+
+class AboutContentCreateView(AdminBaseView):
+    """Create a new About page content block."""
+
+    template_name = 'adminpanel/about_content_form.html'
+
+    def get(self, request):
+        return render(request, self.template_name, {
+            'content_block': None,
+            'form_data': {'key': '', 'title': '', 'body': '', 'order': 0, 'is_visible': True}
+        })
+
+    def post(self, request):
+        key        = request.POST.get('key', '').strip()
+        title      = request.POST.get('title', '').strip()
+        body       = request.POST.get('body', '').strip()
+        order      = request.POST.get('order', '0').strip()
+        is_visible = request.POST.get('is_visible') == 'on'
+
+        errors = []
+        if not key:
+            errors.append('Định danh (key) là bắt buộc.')
+        if not title:
+            errors.append('Tiêu đề là bắt buộc.')
+        if AboutContent.objects.filter(key=key).exists():
+            errors.append(f'Key "{key}" đã tồn tại.')
+
+        try:
+            order = int(order)
+        except ValueError:
+            order = 0
+
+        if errors:
+            return render(request, self.template_name, {
+                'content_block': None,
+                'errors': errors,
+                'form_data': request.POST,
+            })
+
+        AboutContent.objects.create(
+            key=key,
+            title=title,
+            body=body,
+            order=order,
+            is_visible=is_visible,
+            updated_by=request.user,
+        )
+        return redirect('adminpanel:about-content')
+
+
+class AboutContentEditView(AdminBaseView):
+    """Edit an existing About page content block."""
+
+    template_name = 'adminpanel/about_content_form.html'
+
+    def get(self, request, pk):
+        content_block = get_object_or_404(AboutContent, pk=pk)
+        return render(request, self.template_name, {
+            'content_block': content_block,
+            'form_data': {
+                'title': content_block.title,
+                'body': content_block.body,
+                'order': content_block.order,
+                'is_visible': content_block.is_visible,
+            }
+        })
+
+    def post(self, request, pk):
+        content_block = get_object_or_404(AboutContent, pk=pk)
+        title      = request.POST.get('title', '').strip()
+        body       = request.POST.get('body', '').strip()
+        order      = request.POST.get('order', '0').strip()
+        is_visible = request.POST.get('is_visible') == 'on'
+
+        errors = []
+        if not title:
+            errors.append('Tiêu đề là bắt buộc.')
+
+        try:
+            order = int(order)
+        except ValueError:
+            order = 0
+
+        if errors:
+            return render(request, self.template_name, {
+                'content_block': content_block,
+                'errors': errors,
+                'form_data': request.POST,
+            })
+
+        content_block.title      = title
+        content_block.body       = body
+        content_block.order      = order
+        content_block.is_visible = is_visible
+        content_block.updated_by = request.user
+        content_block.save()
+
+        return redirect('adminpanel:about-content')
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class AboutContentDeleteView(AdminBaseView):
+    """Delete an About page content block via POST."""
+
+    def post(self, request, pk):
+        block = get_object_or_404(AboutContent, pk=pk)
+        block.delete()
+        return redirect('adminpanel:about-content')
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class AboutContentReorderView(AdminBaseView):
+    """
+    AJAX endpoint to update ordering.
+    Expects POST body: { "order": [{"id": 1, "order": 0}, ...] }
+    """
+
+    def post(self, request):
+        import json
+        try:
+            data = json.loads(request.body)
+            items = data.get('order', [])
+            for item in items:
+                AboutContent.objects.filter(pk=item['id']).update(order=item['order'])
+            return JsonResponse({'success': True})
+        except Exception as exc:
+            return JsonResponse({'error': str(exc)}, status=400)
+

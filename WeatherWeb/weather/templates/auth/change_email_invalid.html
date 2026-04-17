@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Link không hợp lệ – WeatherGIS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="verify-icon"></div>
+            <h2>Link xác nhận không hợp lệ</h2>
+            <p>{{ reason }}</p>
+        </div>
+        <div class="alert alert-error">
+            Yêu cầu đổi email đã hết hạn hoặc đã được xử lý. Vui lòng thử lại.
+        </div>
+        <a href="{% url 'change-email' %}" class="btn btn-primary btn-block">Thử lại</a>
+        <div class="auth-footer">
+            <p><a href="{% url 'map' %}">Về trang chính</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends "adminpanel/base_admin.html" %}
+{% load static %}
+
+{% block title %}Phân quyền người dùng – Admin WeatherGIS{% endblock %}
+{% block page_title %}Phân quyền: {{ target_user.username }}{% endblock %}
+{% block page_subtitle %}Chỉnh sửa vai trò và trạng thái tài khoản{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'adminpanel:user-detail' target_user.pk %}" class="admin-btn admin-btn--ghost">Quay lại chi tiết</a>
+{% endblock %}
+
+{% block content %}
+
+{% if target_user.pk == request.user.pk %}
+<div class="admin-card">
+    <div class="admin-card-body">
+        <div class="alert alert-error">Bạn không thể chỉnh sửa quyền của chính mình.</div>
+    </div>
+</div>
+{% else %}
+
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h3 class="admin-card-title">Thông tin tài khoản</h3>
+    </div>
+    <div class="admin-card-body">
+        <table class="admin-table">
+            <tbody>
+                <tr><th>Username</th><td><strong>{{ target_user.username }}</strong></td></tr>
+                <tr><th>Email</th><td>{{ target_user.email|default:"–" }}</td></tr>
+                <tr><th>Ngày đăng ký</th><td>{{ target_user.date_joined|date:"d/m/Y H:i" }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h3 class="admin-card-title">Phân quyền & Trạng thái</h3>
+    </div>
+    <div class="admin-card-body">
+        <form method="post" class="admin-form">
+            {% csrf_token %}
+
+            <div class="admin-form-section">
+                <h4 class="admin-form-section-title">Vai trò hệ thống</h4>
+
+                <div class="admin-form-group">
+                    <label class="admin-label">Vai trò (Profile Role)</label>
+                    <div class="admin-radio-group">
+                        <label class="admin-radio-label">
+                            <input type="radio" name="role" value="user"
+                                   {% if not profile or profile.role == 'user' %}checked{% endif %}>
+                            <span class="admin-radio-text">
+                                <span class="admin-badge admin-badge--gray">User</span>
+                                Người dùng thông thường
+                            </span>
+                        </label>
+                        <label class="admin-radio-label">
+                            <input type="radio" name="role" value="admin"
+                                   {% if profile and profile.role == 'admin' %}checked{% endif %}>
+                            <span class="admin-radio-text">
+                                <span class="admin-badge admin-badge--blue">Admin</span>
+                                Quản trị viên (có thể truy cập /panel/)
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-form-section">
+                <h4 class="admin-form-section-title">Quyền Django</h4>
+
+                <div class="admin-check-group">
+                    <label class="admin-check-label">
+                        <input type="checkbox" name="is_active"
+                               {% if target_user.is_active %}checked{% endif %}>
+                        <span>
+                            <strong>Kích hoạt tài khoản (is_active)</strong><br>
+                            <small class="admin-text-muted">Bỏ chọn để vô hiệu hoá – người dùng sẽ không thể đăng nhập</small>
+                        </span>
+                    </label>
+
+                    <label class="admin-check-label">
+                        <input type="checkbox" name="is_staff"
+                               {% if target_user.is_staff %}checked{% endif %}>
+                        <span>
+                            <strong>Staff (is_staff)</strong><br>
+                            <small class="admin-text-muted">Cho phép truy cập vào Django Admin (/admin/)</small>
+                        </span>
+                    </label>
+
+                    {% if request.user.is_superuser %}
+                    <label class="admin-check-label">
+                        <input type="checkbox" name="is_superuser"
+                               {% if target_user.is_superuser %}checked{% endif %}>
+                        <span>
+                            <strong>Superuser (is_superuser)</strong><br>
+                            <small class="admin-text-muted">Quyền cao nhất – chỉ superuser mới có thể cấp</small>
+                        </span>
+                    </label>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="admin-form-actions">
+                <button type="submit" class="admin-btn admin-btn--primary">Lưu thay đổi</button>
+                <a href="{% url 'adminpanel:user-detail' target_user.pk %}" class="admin-btn admin-btn--ghost">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endif %}
+
+{% endblock %}

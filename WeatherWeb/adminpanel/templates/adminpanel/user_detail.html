@@ -6,6 +6,9 @@
 
 {% block page_actions %}
 <a href="{% url 'adminpanel:users' %}" class="admin-btn admin-btn--ghost">Quay lại danh sách</a>
+{% if target_user.pk != request.user.pk %}
+<a href="{% url 'adminpanel:user-edit' target_user.pk %}" class="admin-btn admin-btn--primary">🔑 Phân quyền</a>
+{% endif %}
 {% endblock %}
 
 {% block content %}

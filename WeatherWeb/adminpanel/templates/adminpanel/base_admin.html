@@ -48,14 +48,20 @@
                class="{% if request.resolver_match.url_name == 'api-health' %}active{% endif %}">
                API Health
             </a>
+            <a href="{% url 'adminpanel:about-content' %}"
+               class="{% if 'about-content' in request.resolver_match.url_name %}active{% endif %}">
+               Trang Giới thiệu
+            </a>
         </nav>
 
         <div class="admin-topbar-right">
-            <span class="admin-user-chip">
-                <span class="admin-user-avatar">{{ request.user.username|slice:":1"|upper }}</span>
-                {{ request.user.username }}
-                {% if request.user.is_superuser %}<span class="admin-role-badge">Super</span>{% endif %}
-            </span>
+            <a href="{% url 'profile' %}" class="admin-user-chip-link">
+                <span class="admin-user-chip">
+                    <span class="admin-user-avatar">{{ request.user.username|slice:":1"|upper }}</span>
+                    {{ request.user.username }}
+                    {% if request.user.is_superuser %}<span class="admin-role-badge">Super</span>{% endif %}
+                </span>
+            </a>
             <a href="{% url 'logout' %}" class="admin-logout-btn">Đăng xuất</a>
         </div>
     </header>

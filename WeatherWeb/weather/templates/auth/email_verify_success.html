@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Xác thực thành công – WeatherGIS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="verify-icon">✅</div>
+            <h2>Email đã xác thực!</h2>
+            <p>Chào mừng <strong>{{ username }}</strong>! Tài khoản của bạn đã được kích hoạt thành công.</p>
+        </div>
+
+        <div class="alert alert-success">
+            Bạn có thể đăng nhập ngay bây giờ để bắt đầu sử dụng WeatherGIS.
+        </div>
+
+        <a href="{% url 'login' %}" class="btn btn-primary btn-block">Đăng nhập ngay</a>
+    </div>
+</div>
+{% endblock %}

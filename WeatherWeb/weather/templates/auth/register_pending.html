@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Kiểm tra hộp thư – WeatherGIS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="verify-icon">📧</div>
+            <h2>Xác thực email của bạn</h2>
+            <p>
+                Chúng tôi đã gửi link xác thực đến
+                {% if email %}<strong>{{ email }}</strong>{% else %}địa chỉ email của bạn{% endif %}.
+            </p>
+        </div>
+
+        {% if resent %}
+        <div class="alert alert-success">Email xác thực đã được gửi lại!</div>
+        {% endif %}
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+
+        <div class="verify-steps">
+            <div class="verify-step">
+                <span class="step-num">1</span>
+                <span>Mở email bạn vừa đăng ký</span>
+            </div>
+            <div class="verify-step">
+                <span class="step-num">2</span>
+                <span>Tìm email từ <strong>WeatherGIS</strong></span>
+            </div>
+            <div class="verify-step">
+                <span class="step-num">3</span>
+                <span>Click vào nút <strong>"Xác thực email"</strong></span>
+            </div>
+        </div>
+
+        <div class="verify-note">
+            <p>Không thấy email? Kiểm tra thư mục <strong>Spam / Junk</strong>.</p>
+        </div>
+
+        <form method="post" action="{% url 'resend-verification' %}" class="resend-form">
+            {% csrf_token %}
+            {% if email %}
+            <input type="hidden" name="email" value="{{ email }}">
+            {% endif %}
+            <button type="submit" class="btn btn-secondary btn-block">Gửi lại email xác thực</button>
+        </form>
+
+        <div class="auth-footer">
+            <p><a href="{% url 'login' %}">Quay lại đăng nhập</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -134,10 +134,88 @@
 
 /* Route Results */
 .route-results {
-    max-height: 300px;
+    max-height: 420px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+}
+
+.route-results--hidden {
+    display: none;
+}
+
+.route-results-title {
+    margin: 0 0 .25rem;
+}
+
+.route-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .6rem;
+    padding: .6rem 1rem .2rem;
+}
+
+.summary-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: .55rem .65rem;
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+}
+
+.summary-label {
+    font-size: .74rem;
+    color: var(--text-muted);
+}
+
+.route-legend {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .45rem;
+    padding: .3rem 1rem .75rem;
+    font-size: .78rem;
+}
+
+.legend-title {
+    color: var(--text-muted);
+    margin-right: .2rem;
+}
+
+.legend-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: .15rem .45rem;
+    border-radius: 999px;
+    color: #fff;
+    font-weight: 600;
+}
+
+.legend-chip--low {
+    background: #16a34a;
+}
+
+.legend-chip--medium {
+    background: #d97706;
+}
+
+.legend-chip--high {
+    background: #dc2626;
+}
+
+.legend-note {
+    color: var(--text-muted);
+}
+
+.route-warning-text {
+    color: var(--danger);
+}
+
+.route-cell-empty {
+    text-align: center;
+    color: var(--text-muted);
 }
 
 .route-results .table-container {
@@ -155,18 +233,28 @@
 }
 
 /* Route Markers on Map */
+.route-marker {
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+}
+
 .route-marker-start {
+    width: 22px;
+    height: 22px;
     background: var(--success);
 }
 
 .route-marker-end {
+    width: 22px;
+    height: 22px;
     background: var(--danger);
 }
 
 .route-marker-waypoint {
     background: var(--primary);
-    width: 12px !important;
-    height: 12px !important;
+    width: 12px;
+    height: 12px;
 }
 
 /* Responsive */
@@ -194,3 +282,9 @@
 .route-status--info  { color: var(--primary); background: rgba(59,130,246,.1); }
 .route-status--ok    { color: #10b981;        background: rgba(16,185,129,.1); }
 .route-status--error { color: #ef4444;        background: rgba(239,68,68,.1); }
+
+@media (max-width: 1200px) {
+    .route-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
