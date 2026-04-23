@@ -27,15 +27,14 @@
                     <div class="location-select-row">
                         <select id="start-location" class="form-control" required>
                             <option value="">-- Chọn điểm xuất phát --</option>
-                            <option value="__gps__" data-gps="true">Vị trí hiện tại của tôi</option>
                             {% for loc in locations %}
                             <option value="{{ loc.id }}" data-lat="{{ loc.latitude }}" data-lng="{{ loc.longitude }}">
                                 {{ loc.name|default:"Chưa đặt tên" }}
                             </option>
                             {% endfor %}
                         </select>
-                        <button type="button" class="btn btn-sm btn-gps" id="gps-start-btn" title="Dùng vị trí GPS hiện tại">
-                            GPS
+                        <button type="button" class="btn btn-sm btn-gps" id="gps-start-btn" title="Dùng vị trí hiện tại của tôi">
+                            Vị trí hiện tại của tôi
                         </button>
                     </div>
                     <div class="coord-display" id="start-coords"></div>
@@ -51,15 +50,14 @@
                     <div class="location-select-row">
                         <select id="end-location" class="form-control" required>
                             <option value="">-- Chọn điểm đích --</option>
-                            <option value="__gps__" data-gps="true">Vị trí hiện tại của tôi</option>
                             {% for loc in locations %}
                             <option value="{{ loc.id }}" data-lat="{{ loc.latitude }}" data-lng="{{ loc.longitude }}">
                                 {{ loc.name|default:"Chưa đặt tên" }}
                             </option>
                             {% endfor %}
                         </select>
-                        <button type="button" class="btn btn-sm btn-gps" id="gps-end-btn" title="Dùng vị trí GPS hiện tại">
-                            GPS
+                        <button type="button" class="btn btn-sm btn-gps" id="gps-end-btn" title="Dùng vị trí hiện tại của tôi">
+                            Vị trí hiện tại của tôi
                         </button>
                     </div>
                     <div class="coord-display" id="end-coords"></div>
@@ -205,14 +203,21 @@
                 statusEl.textContent = 'Đã lấy: ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
                 statusEl.style.color = '#1a73e8';
 
-                // Auto-select the "Vị trí hiện tại" option
-                for (var i = 0; i < selectEl.options.length; i++) {
-                    if (selectEl.options[i].value === '__gps__') {
-                        selectEl.selectedIndex = i;
-                        selectEl.dispatchEvent(new Event('change'));
-                        break;
-                    }
+                // Ensure "__gps__" option exists (we removed it from static HTML to avoid errors before fetch)
+                var gpsOption = Array.from(selectEl.options).find(function(opt) { return opt.value === '__gps__'; });
+                if (!gpsOption) {
+                    gpsOption = document.createElement('option');
+                    gpsOption.value = '__gps__';
+                    gpsOption.textContent = 'Vị trí hiện tại của tôi';
+                    selectEl.add(gpsOption, 1); // Add after placeholder
                 }
+                
+                // Set dataset attributes for map preview compatibility
+                gpsOption.dataset.lat = lat;
+                gpsOption.dataset.lng = lng;
+                
+                selectEl.value = '__gps__';
+                selectEl.dispatchEvent(new Event('change'));
             },
             function (err) {
                 statusEl.textContent = 'Không lấy được vị trí: ' + err.message;
@@ -230,18 +235,7 @@
         resolveGps('end', document.getElementById('gps-end-status'), document.getElementById('end-location'));
     });
 
-    // When dropdown changes to __gps__ but no coords yet, trigger resolution
-    ['start-location', 'end-location'].forEach(function (id) {
-        var which = id === 'start-location' ? 'start' : 'end';
-        document.getElementById(id).addEventListener('change', function () {
-            if (this.value === '__gps__' && !window._gpsCoords[which]) {
-                var statusId = which === 'start' ? 'gps-start-status' : 'gps-end-status';
-                resolveGps(which, document.getElementById(statusId), this);
-            }
-        });
-    });
-
-    // Auto-fetch location on load and set as Start Point
+    // Automatically fetch location on load and set as Start Point
     setTimeout(function() {
         resolveGps('start', document.getElementById('gps-start-status'), document.getElementById('start-location'));
     }, 500);

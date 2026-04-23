@@ -78,9 +78,7 @@
         if (option && option.value === '__gps__') {
             var gps = window._gpsCoords && window._gpsCoords[which];
             if (gps) {
-                document.getElementById(coordId).textContent = 'GPS: ' + gps.lat.toFixed(5) + ', ' + gps.lng.toFixed(5);
-            } else {
-                document.getElementById(coordId).textContent = 'Chờ GPS...';
+                document.getElementById(coordId).textContent = 'Vị trí hiện tại của tôi: ' + gps.lat.toFixed(5) + ', ' + gps.lng.toFixed(5);
             }
         } else if (option && option.dataset.lat) {
             document.getElementById(coordId).textContent = UIHelpers.formatCoords(parseFloat(option.dataset.lat), parseFloat(option.dataset.lng));
@@ -117,7 +115,7 @@
         if (startSel.value === '__gps__') {
             var sg = window._gpsCoords && window._gpsCoords.start;
             if (!sg) {
-                UIHelpers.showToast('Vui lòng nhấn 📍 để lấy vị trí GPS trước', 'error');
+                UIHelpers.showToast('Vui lòng nhấn "Vị trí hiện tại của tôi" để lấy tọa độ trước', 'error');
                 return;
             }
             payload.start_lat = sg.lat;
@@ -129,7 +127,7 @@
         if (endSel.value === '__gps__') {
             var eg = window._gpsCoords && window._gpsCoords.end;
             if (!eg) {
-                UIHelpers.showToast('Vui lòng nhấn 📍 để lấy vị trí GPS cho điểm đích', 'error');
+                UIHelpers.showToast('Vui lòng nhấn "Vị trí hiện tại của tôi" để lấy tọa độ cho điểm đích', 'error');
                 return;
             }
             payload.end_lat = eg.lat;
