@@ -251,8 +251,16 @@
 }
 .admin-card-action:hover { text-decoration: underline; }
 
-.admin-card-body { padding: 1.25rem; }
-.admin-card-body--flush { padding: 0; }
+.admin-card-body { 
+    padding: 1.25rem; 
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.admin-card-body--flush { 
+    padding: 0; 
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
 
 /* ── Stat grid (dashboard) ───────────────────────────────────── */
 .admin-stat-grid {
@@ -341,6 +349,7 @@
     width: 100%;
     border-collapse: collapse;
     font-size: .83rem;
+    white-space: nowrap;
 }
 
 .admin-table thead tr {
@@ -1017,15 +1026,6 @@
         flex-wrap: wrap;
     }
 
-    /* Table scroll wrapper */
-    .admin-card-body--flush {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .admin-table {
-        min-width: 700px;
-    }
 }
 
 /* ── 640px: Small tablet ─────────────────────── */

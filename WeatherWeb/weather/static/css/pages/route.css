@@ -260,11 +260,17 @@
 /* Responsive */
 @media (max-width: 900px) {
     .route-main {
-        min-height: 500px;
+        flex: 1;
+        min-height: 0;
     }
     
+    .route-main .map-container {
+        flex: 1;
+        min-height: 0;
+    }
+
     .route-results {
-        max-height: 250px;
+        max-height: 350px;
     }
 }
 
@@ -328,7 +334,7 @@
 /* ── Small mobile ─────────────────────────── */
 @media (max-width: 480px) {
     .route-main .map-container {
-        min-height: 300px;
+        flex: 1;
     }
 
     .route-direction {

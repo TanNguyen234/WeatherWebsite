@@ -266,6 +266,10 @@
 }
 
 @media (max-width: 900px) {
+    .sidebar {
+        width: 100%;
+    }
+
     .map-container {
         min-height: 62vh;
     }
