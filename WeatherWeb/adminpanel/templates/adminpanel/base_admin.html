@@ -23,6 +23,10 @@
             <span class="admin-brand-name">WeatherGIS <em>Admin</em></span>
         </div>
 
+        <button class="admin-nav-toggle" id="adminNavToggle" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+
         <nav class="admin-topnav">
             <a href="{% url 'adminpanel:dashboard' %}"
                class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
@@ -58,7 +62,7 @@
             <a href="{% url 'profile' %}" class="admin-user-chip-link">
                 <span class="admin-user-chip">
                     <span class="admin-user-avatar">{{ request.user.username|slice:":1"|upper }}</span>
-                    {{ request.user.username }}
+                    <span class="admin-user-name-text">{{ request.user.username }}</span>
                     {% if request.user.is_superuser %}<span class="admin-role-badge">Super</span>{% endif %}
                 </span>
             </a>
@@ -86,5 +90,21 @@
 
     <script src="{% static 'js/adminpanel/admin.js' %}"></script>
     {% block extra_js %}{% endblock %}
+
+    <!-- Admin nav toggle (responsive hamburger) -->
+    <script>
+    (function(){
+        var t=document.getElementById('adminNavToggle'),bar=document.querySelector('.admin-topbar');
+        if(!t||!bar)return;
+        t.addEventListener('click',function(e){e.stopPropagation();bar.classList.toggle('admin-nav-open');});
+        bar.querySelectorAll('.admin-topnav a').forEach(function(a){
+            a.addEventListener('click',function(){bar.classList.remove('admin-nav-open');});
+        });
+        document.addEventListener('click',function(e){
+            if(!bar.contains(e.target))bar.classList.remove('admin-nav-open');
+        });
+    })();
+    </script>
 </body>
 </html>
+

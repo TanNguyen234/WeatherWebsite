@@ -834,3 +834,90 @@
     }
 }
 
+/* ── Small mobile ─────────────────────────── */
+@media (max-width: 480px) {
+    .layers-sidebar {
+        max-height: 38vh;
+    }
+
+    .layers-sidebar .sidebar-header {
+        padding: 0.7rem 0.9rem;
+    }
+
+    .sidebar-title-row h2 {
+        font-size: 0.85rem;
+    }
+
+    .data-badge {
+        font-size: 0.65rem;
+        padding: 0.15rem 0.45rem;
+    }
+
+    .layers-sidebar .sidebar-content {
+        padding: 0.5rem;
+        gap: 0.4rem;
+    }
+
+    .layer-card-header {
+        padding: 0.6rem 0.7rem;
+    }
+
+    .layer-name {
+        font-size: 0.82rem;
+    }
+
+    .layer-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .control-label {
+        min-width: 58px;
+        font-size: 0.7rem;
+    }
+
+    .sidebar-section {
+        padding: 0.7rem;
+    }
+
+    .map-legend {
+        min-width: 170px;
+        max-width: min(82vw, 230px);
+        bottom: 28px;
+        right: 8px;
+    }
+
+    .legend-header {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.72rem;
+    }
+
+    .legend-body {
+        padding: 0.4rem 0.6rem;
+    }
+
+    .map-toolbar {
+        top: 8px;
+        right: 8px;
+    }
+
+    .toolbar-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .layer-chips {
+        max-width: 60%;
+        top: 8px;
+        left: 8px;
+    }
+
+    .layer-chip {
+        font-size: 0.65rem;
+        padding: 0.15rem 0.45rem 0.15rem 0.35rem;
+    }
+
+    .map-infobar {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.5rem;
+    }
+}

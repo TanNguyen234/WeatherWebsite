@@ -832,14 +832,293 @@
     background: var(--adm-surface2);
 }
 
+/* ── Admin Hamburger Button (hidden by default) ──────────── */
+.admin-nav-toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: .4rem;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4.5px;
+    border-radius: var(--adm-radius-sm);
+    transition: background .15s;
+    flex-shrink: 0;
+}
+
+.admin-nav-toggle:hover {
+    background: var(--adm-surface2);
+}
+
+.admin-nav-toggle span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: var(--adm-text-muted);
+    border-radius: 2px;
+    transition: transform .3s ease, opacity .2s ease, background .15s;
+}
+
+.admin-nav-toggle:hover span {
+    background: var(--adm-text);
+}
+
+/* Hamburger → X animation */
+.admin-topbar.admin-nav-open .admin-nav-toggle span:nth-child(1) {
+    transform: translateY(6.5px) rotate(45deg);
+    background: var(--adm-accent);
+}
+
+.admin-topbar.admin-nav-open .admin-nav-toggle span:nth-child(2) {
+    opacity: 0;
+}
+
+.admin-topbar.admin-nav-open .admin-nav-toggle span:nth-child(3) {
+    transform: translateY(-6.5px) rotate(-45deg);
+    background: var(--adm-accent);
+}
+
 /* ── Responsive ──────────────────────────────────────────────── */
+
+/* ── 1024px: Tablet ─────────────────────────── */
+@media (max-width: 1024px) {
+    .admin-topnav a {
+        padding: .35rem .6rem;
+        font-size: .78rem;
+    }
+
+    .admin-topbar {
+        padding: 0 .85rem;
+    }
+
+    .admin-brand {
+        margin-right: .75rem;
+    }
+
+    .admin-user-name-text {
+        display: none;
+    }
+
+    .admin-main {
+        padding: 1.25rem 1rem 2.5rem;
+    }
+
+    .admin-dashboard-cols {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── 768px: Mobile — Hamburger active ────────── */
 @media (max-width: 768px) {
-    .admin-topnav { display: none; }
-    .admin-main   { padding: 1rem .75rem 2rem; }
-    .admin-stat-grid { grid-template-columns: 1fr 1fr; }
-    .admin-layer-grid { grid-template-columns: 1fr; }
-    .admin-health-grid { grid-template-columns: 1fr; }
-    .admin-search-input-wrap { max-width: 100%; }
+    .admin-topbar {
+        flex-wrap: wrap;
+        height: auto;
+        min-height: var(--adm-topbar-h);
+        padding: .5rem .75rem;
+        gap: 0;
+    }
+
+    .admin-nav-toggle {
+        display: flex;
+        order: 2;
+        margin-left: auto;
+    }
+
+    .admin-topbar-right {
+        order: 3;
+        margin-left: .5rem;
+    }
+
+    .admin-user-name-text {
+        display: none;
+    }
+
+    .admin-logout-btn {
+        font-size: .75rem;
+        padding: .28rem .55rem;
+    }
+
+    /* Dropdown nav */
+    .admin-topnav {
+        order: 4;
+        width: 100%;
+        flex-direction: column;
+        gap: .15rem;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height .35s cubic-bezier(.4, 0, .2, 1),
+                    opacity .25s ease,
+                    padding .2s ease;
+        opacity: 0;
+        padding: 0;
+        margin-top: 0;
+        border-top: 1px solid transparent;
+    }
+
+    .admin-topbar.admin-nav-open .admin-topnav {
+        display: flex;
+        max-height: 500px;
+        opacity: 1;
+        padding: .5rem 0 .25rem;
+        margin-top: .4rem;
+        border-top-color: var(--adm-border);
+    }
+
+    .admin-topnav a {
+        display: block;
+        padding: .55rem .75rem;
+        font-size: .84rem;
+        border-radius: var(--adm-radius-sm);
+        width: 100%;
+    }
+
+    /* Stat grid */
+    .admin-stat-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* Main spacing */
+    .admin-main {
+        padding: 1rem .75rem 2rem;
+    }
+
+    /* Grids */
+    .admin-layer-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-health-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Search */
+    .admin-search-input-wrap {
+        max-width: 100%;
+    }
+
+    /* Page header */
+    .admin-page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .admin-page-actions {
+        width: 100%;
+    }
+
+    /* Forms */
+    .admin-form-row {
+        flex-direction: column;
+    }
+
+    .admin-form-actions {
+        flex-wrap: wrap;
+    }
+
+    /* Table scroll wrapper */
+    .admin-card-body--flush {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .admin-table {
+        min-width: 700px;
+    }
+}
+
+/* ── 640px: Small tablet ─────────────────────── */
+@media (max-width: 640px) {
+    .admin-stat-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-stat-value {
+        font-size: 1.4rem;
+    }
+
+    .admin-page-title {
+        font-size: 1.15rem;
+    }
+
+    .admin-search-row {
+        flex-wrap: wrap;
+    }
+
+    .admin-search-input-wrap {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .admin-health-card {
+        flex-direction: column;
+        gap: .75rem;
+    }
+}
+
+/* ── 480px: Small mobile ─────────────────────── */
+@media (max-width: 480px) {
+    .admin-topbar {
+        padding: .4rem .55rem;
+    }
+
+    .admin-brand-name {
+        font-size: .78rem;
+    }
+
+    .admin-brand-logo {
+        font-size: 1rem;
+    }
+
+    .admin-brand {
+        margin-right: .4rem;
+        gap: .3rem;
+    }
+
+    .admin-main {
+        padding: .75rem .5rem 1.5rem;
+    }
+
+    .admin-card-body {
+        padding: .85rem;
+    }
+
+    .admin-stat-card {
+        padding: .85rem .9rem;
+    }
+
+    .admin-stat-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+    }
+
+    .admin-btn {
+        font-size: .78rem;
+        padding: .4rem .7rem;
+    }
+
+    .admin-logout-btn {
+        font-size: .7rem;
+        padding: .22rem .4rem;
+    }
+
+    .admin-page-title {
+        font-size: 1.05rem;
+    }
+
+    .admin-page-subtitle {
+        font-size: .75rem;
+    }
+
+    .admin-layer-detail-card {
+        padding: .9rem;
+    }
+
+    .admin-layer-meta-label {
+        width: 90px;
+    }
 }
 
 /* ── Admin UI Refresh (minimal, modern, logic-safe) ───────── */
@@ -965,23 +1244,3 @@
     display: none !important;
 }
 
-@media (max-width: 960px) {
-    .admin-stat-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 768px) {
-    .admin-stat-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .admin-page-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .admin-page-actions {
-        width: 100%;
-    }
-}
