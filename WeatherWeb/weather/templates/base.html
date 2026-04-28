@@ -21,6 +21,10 @@
             <a href="{% url 'map' %}"><h1>WeatherGIS</h1></a>
         </div>
         
+        <button class="nav-toggle" id="navToggle" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+
         <nav>
             <ul class="nav-menu">
                 <li><a href="{% url 'map' %}" class="{% if request.resolver_match.url_name == 'map' %}active{% endif %}">Bản đồ</a></li>
@@ -72,5 +76,20 @@
     
     <!-- Page-specific JS -->
     {% block extra_js %}{% endblock %}
+
+    <!-- Nav toggle (responsive hamburger) -->
+    <script>
+    (function(){
+        var t=document.getElementById('navToggle'),h=document.querySelector('.page-header');
+        if(!t||!h)return;
+        t.addEventListener('click',function(e){e.stopPropagation();h.classList.toggle('nav-open');});
+        h.querySelectorAll('.nav-menu a, .auth-links a').forEach(function(a){
+            a.addEventListener('click',function(){h.classList.remove('nav-open');});
+        });
+        document.addEventListener('click',function(e){
+            if(!h.contains(e.target))h.classList.remove('nav-open');
+        });
+    })();
+    </script>
 </body>
 </html>

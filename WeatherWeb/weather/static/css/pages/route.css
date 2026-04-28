@@ -260,11 +260,17 @@
 /* Responsive */
 @media (max-width: 900px) {
     .route-main {
-        min-height: 500px;
+        flex: 1;
+        min-height: 0;
     }
     
+    .route-main .map-container {
+        flex: 1;
+        min-height: 0;
+    }
+
     .route-results {
-        max-height: 250px;
+        max-height: 350px;
     }
 }
 
@@ -286,5 +292,73 @@
 @media (max-width: 1200px) {
     .route-summary {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* ── Small tablet ─────────────────────────── */
+@media (max-width: 640px) {
+    .route-summary {
+        grid-template-columns: 1fr;
+        gap: .4rem;
+        padding: .4rem .7rem .15rem;
+    }
+
+    .summary-card {
+        padding: .4rem .5rem;
+    }
+
+    .route-results {
+        max-height: 200px;
+    }
+
+    .route-legend {
+        padding: .25rem .7rem .5rem;
+        font-size: .72rem;
+    }
+
+    .route-results .data-table {
+        font-size: 0.78rem;
+        min-width: 500px;
+    }
+
+    .route-results .table-container {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .sidebar-description {
+        font-size: 0.78rem;
+        margin-bottom: 1rem;
+    }
+}
+
+/* ── Small mobile ─────────────────────────── */
+@media (max-width: 480px) {
+    .route-main .map-container {
+        flex: 1;
+    }
+
+    .route-direction {
+        font-size: 1.2rem;
+        padding: 0.3rem 0;
+    }
+
+    .coord-display {
+        font-size: 0.68rem;
+    }
+
+    .saved-routes h3 {
+        font-size: 0.82rem;
+    }
+
+    .route-name {
+        font-size: 0.78rem;
+    }
+
+    .route-path {
+        font-size: 0.68rem;
+    }
+
+    .route-item {
+        padding: 0.45rem;
     }
 }
