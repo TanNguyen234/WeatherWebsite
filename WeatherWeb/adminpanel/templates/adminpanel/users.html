@@ -89,6 +89,13 @@
                         >
                             {% if row.user.is_active %}Vô hiệu{% else %}Kích hoạt{% endif %}
                         </button>
+                        <button
+                            class="admin-btn admin-btn--sm admin-btn--delete"
+                            style="background-color: #ef4444; color: white; border-color: #ef4444; margin-left: 4px;"
+                            data-user-id="{{ row.user.pk }}"
+                        >
+                            Xóa
+                        </button>
                         {% else %}
                         <span class="admin-text-muted admin-text-sm">Bạn</span>
                         {% endif %}
@@ -158,6 +165,46 @@
                 btn.disabled = false;
                 btn.textContent = wasActive ? 'Vô hiệu' : 'Kích hoạt';
                 alert('Không thể thực hiện. Vui lòng thử lại.');
+            });
+        });
+    });
+
+    var deleteUrl = "{% url 'adminpanel:user-delete' %}";
+
+    document.querySelectorAll('.admin-btn--delete').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (!confirm('Bạn có chắc chắn muốn xóa người dùng này? Thao tác này không thể hoàn tác.')) {
+                return;
+            }
+            
+            var userId   = btn.dataset.userId;
+            var originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '…';
+
+            fetch(deleteUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken
+                },
+                body: 'user_id=' + encodeURIComponent(userId)
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    alert(data.error);
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                    return;
+                }
+                var row = document.getElementById('user-row-' + userId);
+                if (row) row.remove();
+            })
+            .catch(function () {
+                btn.disabled = false;
+                btn.textContent = originalText;
+                alert('Không thể thực hiện xóa. Vui lòng thử lại.');
             });
         });
     });

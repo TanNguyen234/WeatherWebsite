@@ -6,9 +6,9 @@ from adminpanel.views import (
     UserToggleActiveView,
     UserEditView,
     UserRoleUpdateView,
+    UserDeleteView,
     LocationListView,
     RouteListView,
-    LayerConfigView,
     APIHealthView,
     APIHealthCheckView,
     AboutContentListView,
@@ -30,13 +30,11 @@ urlpatterns = [
     path('users/toggle/',       UserToggleActiveView.as_view(), name='user-toggle-active'),
     path('users/<int:user_id>/edit/',    UserEditView.as_view(),      name='user-edit'),
     path('users/<int:user_id>/role/',    UserRoleUpdateView.as_view(),name='user-role-update'),
+    path('users/delete/',       UserDeleteView.as_view(),     name='user-delete'),
 
     # Locations & Routes
     path('locations/',          LocationListView.as_view(),      name='locations'),
     path('routes/',             RouteListView.as_view(),         name='routes'),
-
-    # Layers
-    path('layers/',             LayerConfigView.as_view(),       name='layer-config'),
 
     # API Health
     path('api-health/',         APIHealthView.as_view(),         name='api-health'),

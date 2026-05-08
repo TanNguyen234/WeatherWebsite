@@ -262,15 +262,17 @@
     .route-main {
         flex: 1;
         min-height: 0;
+        overflow-y: auto;
     }
     
     .route-main .map-container {
-        flex: 1;
-        min-height: 0;
+        flex: none;
+        min-height: 300px;
     }
 
     .route-results {
-        max-height: 350px;
+        max-height: none;
+        flex: none;
     }
 }
 
@@ -307,10 +309,6 @@
         padding: .4rem .5rem;
     }
 
-    .route-results {
-        max-height: 200px;
-    }
-
     .route-legend {
         padding: .25rem .7rem .5rem;
         font-size: .72rem;
@@ -334,7 +332,8 @@
 /* ── Small mobile ─────────────────────────── */
 @media (max-width: 480px) {
     .route-main .map-container {
-        flex: 1;
+        flex: none;
+        min-height: 300px;
     }
 
     .route-direction {

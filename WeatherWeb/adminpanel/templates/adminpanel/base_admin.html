@@ -44,10 +44,6 @@
                class="{% if request.resolver_match.url_name == 'routes' %}active{% endif %}">
                Tuyến đường
             </a>
-            <a href="{% url 'adminpanel:layer-config' %}"
-               class="{% if request.resolver_match.url_name == 'layer-config' %}active{% endif %}">
-               Lớp bản đồ
-            </a>
             <a href="{% url 'adminpanel:api-health' %}"
                class="{% if request.resolver_match.url_name == 'api-health' %}active{% endif %}">
                API Health
