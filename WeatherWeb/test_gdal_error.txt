@@ -1,6 +1,0 @@
-Traceback (most recent call last):
-  File "D:\Project\WeatherWebsite\WeatherWeb\test_gdal.py", line 7, in <module>
-    from WeatherWeb import settings
-  File "D:\Project\WeatherWebsite\WeatherWeb\WeatherWeb\settings.py", line 14, in <module>
-    from dotenv import load_dotenv
-ModuleNotFoundError: No module named 'dotenv'

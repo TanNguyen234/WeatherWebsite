@@ -1,5 +1,6 @@
 (function () {
     'use strict';
+    console.log('Predict.js version 2.2 loaded - Debugging empty image');
 
     const state = {
         map: null,
@@ -47,6 +48,7 @@
             return;
         }
         renderChart(state.lastDisplayRows);
+        // Sau khi vẽ lại chart (không animation), chụp lại ảnh ngay
         renderChartImageFromCanvas();
     }
 
@@ -246,7 +248,7 @@
             renderRowsTable(state.lastDisplayRows);
         }
 
-        renderChartImage(null);
+        renderChartImage(result.chart_image_base64);
 
         if (state.marker) {
             state.marker.bindPopup(`
@@ -381,7 +383,7 @@
         }
 
         if (base64Image) {
-            image.src = `data:image/png;base64,${base64Image}`;
+            image.src = base64Image.startsWith('data:') ? base64Image : `data:image/png;base64,${base64Image}`;
             box.classList.remove('is-hidden');
             return;
         }
@@ -395,8 +397,20 @@
         if (!box || !image || !state.chart) {
             return;
         }
-        image.src = state.chart.toBase64Image('image/png', 1);
-        box.classList.remove('is-hidden');
+
+        const dataUrl = state.chart.toBase64Image('image/png', 1);
+        
+        // Force refresh the image by clearing and setting
+        image.src = ''; 
+        image.onload = () => {
+            console.log('Forecast image loaded successfully:', image.naturalWidth, 'x', image.naturalHeight);
+            box.classList.remove('is-hidden');
+            image.style.display = 'block';
+        };
+        image.onerror = (err) => {
+            console.error('Failed to load forecast image preview', err);
+        };
+        image.src = dataUrl;
     }
 
     async function exportPrediction(type) {
@@ -620,6 +634,7 @@
                     mode: 'index',
                     intersect: false
                 },
+                animation: false,
                 plugins: {
                     legend: {
                         position: 'top',

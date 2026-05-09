@@ -95,9 +95,9 @@ def _parse_time_label(
 
 def generate_prediction_chart_png(rows: list[dict], metric: str = "temperature") -> bytes:
     metric_map = {
-        "temperature": ("api_temperature", "ai_temperature", "Nhiet do", "°C"),
-        "humidity": ("api_humidity", "ai_humidity", "Do am", "%"),
-        "wind_speed": ("api_wind_speed", "ai_wind_speed", "Toc do gio", "m/s"),
+        "temperature": ("api_temperature", "ai_temperature", "Nhiệt độ", "°C"),
+        "humidity": ("api_humidity", "ai_humidity", "Độ ẩm", "%"),
+        "wind_speed": ("api_wind_speed", "ai_wind_speed", "Tốc độ gió", "m/s"),
     }
     api_key, ai_key, title, unit = metric_map.get(metric, metric_map["temperature"])
 
@@ -120,8 +120,8 @@ def generate_prediction_chart_png(rows: list[dict], metric: str = "temperature")
     if any(v is not None for v in ai_values):
         ax.plot(labels, ai_values, label=f"AI {title} ({unit})", color="#10b981", linewidth=2, linestyle="--")
 
-    ax.set_title(f"So sanh du bao {title}")
-    ax.set_xlabel("Thoi gian")
+    ax.set_title(f"So sánh dự báo {title}")
+    ax.set_xlabel("Thời gian")
     ax.set_ylabel(f"{title} ({unit})")
     ax.grid(alpha=0.25)
     ax.legend()

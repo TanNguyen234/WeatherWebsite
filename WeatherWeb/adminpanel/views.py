@@ -27,7 +27,7 @@ import os
 import requests
 
 from weather.models import UserLocation, Route, AboutContent
-from weather.services.layer_config import get_available_layers
+from weather.models import UserLocation, Route, AboutContent
 
 User = get_user_model()
 
@@ -199,6 +199,26 @@ class UserToggleActiveView(AdminBaseView):
         return JsonResponse({'success': True, 'is_active': target.is_active})
 
 
+@method_decorator(csrf_exempt, name='dispatch')
+class UserDeleteView(AdminBaseView):
+    """Delete a user via POST (AJAX)."""
+
+    def post(self, request):
+        if not self._is_admin(request.user):
+            return JsonResponse({'error': 'Forbidden'}, status=403)
+
+        user_id = request.POST.get('user_id')
+        if not user_id:
+            return JsonResponse({'error': 'Thiếu user_id'}, status=400)
+        target = get_object_or_404(User, pk=user_id)
+
+        if target == request.user:
+            return JsonResponse({'error': 'Không thể xóa tài khoản của chính bạn'}, status=400)
+
+        target.delete()
+        return JsonResponse({'success': True})
+
+
 # ---------------------------------------------------------------------------
 # User Edit (Role / Permission assignment)
 # ---------------------------------------------------------------------------
@@ -339,24 +359,6 @@ class RouteListView(AdminBaseView):
             'routes': routes,
             'total':  Route.objects.count(),
             'query':  query,
-        }
-        return render(request, self.template_name, context)
-
-
-# ---------------------------------------------------------------------------
-# Layers configuration viewer
-# ---------------------------------------------------------------------------
-
-class LayerConfigView(AdminBaseView):
-    """Read-only view of weather layer configuration."""
-
-    template_name = 'adminpanel/layer_config.html'
-
-    def get(self, request):
-        layers = get_available_layers()
-        context = {
-            'layers':      layers,
-            'api_key_set': bool(OPENWEATHER_API_KEY),
         }
         return render(request, self.template_name, context)
 
