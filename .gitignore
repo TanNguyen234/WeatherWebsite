@@ -5,11 +5,12 @@ venv/
 __pycache__/
 *.pyc
 *.pyo
-
+*.docx
 # Django
 db.sqlite3
 *.log
-
+.agents/
+skills/
 # Environment variables
 .env
 
